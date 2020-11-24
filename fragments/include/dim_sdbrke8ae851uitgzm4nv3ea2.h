@@ -1,13 +1,13 @@
-/* 
+/*
  * #include <dim_sdbrke8ae851uitgzm4nv3ea2.h>
  *
  *//** @file
  *
  * Utilities related to the size of an array. *//*
  *
- * v2020.324
+ * v2020.329
  *
- * (c) 2010-2017 by Guenther Brunthaler.
+ * (c) 2010-2020 by Guenther Brunthaler.
  * This source file is free software.
  * Distribution is permitted under the terms of the LGPLv3.
  */
