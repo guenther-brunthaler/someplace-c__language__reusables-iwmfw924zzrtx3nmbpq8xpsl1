@@ -1,0 +1,985 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.9" />
+<title>Handling of buffers with different allocation properties</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+  padding: 0;
+  margin: 0;
+}
+pre {
+  white-space: pre-wrap;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; vertical-align: text-bottom; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+
+
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install();
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Handling of buffers with different allocation properties</h1>
+<span id="author">v2020.116.1</span><br />
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p>This document is part of the R4G (Resource control framework, 4th generation) project.</p></div>
+<div class="paragraph"><p>There have been many implementations of those during the years, but the newest approach (shamelessly stealing from "Go") does like this:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>#include &lt;stddef.h&gt;
+
+/* Describes a writable portion of a memory area. Frequently but not
+ * necessarily dynamically allocated. Can also be a "window" into a larger
+ * object. Primarily meant to represent binary bytes, but also works for
+ * text. */
+typedef struct {
+   char *start; /* Null if the buffer has not been allocated yet. */
+   size_t length; /* Does *not* include the '\0' if it is a C string. */
+   size_t capacity; /* Zero if start == null or if slice is a window. */
+} slice;
+
+/* Describes a read-only portion of a memory area. Frequently but not
+ * necessarily dynamically allocated. Can also be a "window" into a larger
+ * object. Primarily meant to represent binary bytes, but also works for
+ * text. */
+typedef struct {
+   char const *start; /* Null only if length is also 0. */
+   size_t length; /* Does *not* include the '\0' if it is a C string. */
+} slice_view;
+
+/* Converts a writable slice into a read-only slice_view. Only the latter ones
+ * can be used to slice constant string literals (or constant buffer contents
+ * in general). */
+void slice2view_c0(slice_view *dst, slice const *src);</code></pre>
+</div></div>
+<div class="paragraph"><p>As simple a this structure is, there are many things that need to be said about it, and which have gone wrong in previous implementations.</p></div>
+<div class="paragraph"><p>There is also a fundamental change to earlier iterations of the concept, which is that slices can refer to dynamically allocated buffers as well as to statically allocated or temporary (on the stack) ones.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_start">start</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This is a <code>char *</code> and not a <code>void *</code>. At first this might seem wrong, because such a buffer can hold any type of data, which might not necessarily be text.</p></div>
+<div class="paragraph"><p>But if one studies the C standard more closely will see that the type <code>char</code> is not reserved for text exclusively.</p></div>
+<div class="paragraph"><p>Instead, the C standard defines a <code>char</code> the same as a <code>byte</code>. At least when it comes to the length of the object, because the standard clearly states:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The value returned by the <code>sizeof</code> operator represents the number of <em>bytes</em> in the object.
+</p>
+</li>
+<li>
+<p>
+The <code>sizeof(char)</code> must be <code>1</code>.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>It follows, that a <code>char</code> always has the same size as a byte - and this is all we care about im case a binary buffer, because we will see it as an opaque array of <strong>bytes</strong>.</p></div>
+<div class="paragraph"><p>Also, no pointer arithmetic can be done on "<code>void *</code>"s. They need to be casted into something, which is not what we want when dealing with byte arrays. Therfore, <code>char *</code> is actually a very good general type for byte arrays, despite the connotations with human-readable text it might evoke.</p></div>
+<div class="paragraph"><p>The only question is whether other identifiers that <em>start</em> might be more appropriate or practical:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+bytes
+</p>
+</li>
+<li>
+<p>
+begin
+</p>
+</li>
+<li>
+<p>
+start
+</p>
+</li>
+<li>
+<p>
+buffer
+</p>
+</li>
+<li>
+<p>
+p
+</p>
+</li>
+<li>
+<p>
+contents
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>"bytes", although correct from the standpoint of the slice object, sounds strange of the slice is used in a context where it ought to represent a particular data type rather than opaque bytes. It is therefore a good idea not to express the type trait too strongly.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+"begin" has the advantage that the C++ standard library calls it so. However, the point of a slice is that it cannot just point at the beginning of a buffer, but also somewhere into its middle.
+</p>
+</li>
+<li>
+<p>
+"start" - well this sound also good. Maybe even better than "data", because "start" + "length" fit together just fine. However, data is shorter - less to type. "data" + "lenght" also sound OK, even though "data" + "size" would sound even better.
+</p>
+</li>
+<li>
+<p>
+"buffer" was a good choice as long as the object exclusively referred to dynamically allocated memory blocks. However, this is no longer the case. And no-one would, for instance, call a part of a statically-allocated read-only string literal a "buffer".
+</p>
+</li>
+<li>
+<p>
+"p" is nice, but too generic.
+</p>
+</li>
+<li>
+<p>
+"contents" also sounds ok, but it is a little long. It is also very generic, just like data, but more to type.
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>One reason why "start" has been finally chosen was the fact that the combination "start" + "length" fit semantically together just fine.</p></div>
+<div class="paragraph"><p>Before "start", "data" has been used, which had the advantage of being shorter and thus less to type. However, the difference is just a single character, and "data" is a bit too generic for my taste.</p></div>
+<div class="paragraph"><p>In R4G, the semantics of <code>start</code> is:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+If it is null, then the slice is "inactive". It exists, but no memory block is currently associated with it. This makes the slice not invalid, but accessing the referenced memory is obviously not allowed.
+</p>
+</li>
+<li>
+<p>
+<code>start</code> is not normally null-terminated. While it can be, the functions dealing with slices do not assume or ensure this. Null-termination is frequently required for passing strings to C library functions, but in this case special slice-functions need to be called which will add such a null terminator explicitly.
+</p>
+</li>
+<li>
+<p>
+If <code>start</code> is null, then both <code>length</code> and <code>capacity</code> must also be null.
+</p>
+</li>
+<li>
+<p>
+If <code>start</code> is not null, then both <code>length</code> and <code>capacity</code> may nevertheless be null. See below for an explanation.
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_length">length</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This is the "logical" length of the allocated buffer. In case of a text string, this represents the number of actual characters in the represented text. It does <strong>not</strong> include the null terminator, even if one is actually present.</p></div>
+<div class="paragraph"><p>The function for null-terminating a slice will write the null-terminator after the portion of the buffer indicated by <code>length</code>, but of course still inside its <code>capacity</code>.</p></div>
+<div class="paragraph"><p><code>length</code> refers to the currently "used" part of the buffer. It can be enlarged up to the value represented by <code>capacity</code> without a need to reallocate the buffer. However, it is possible that <code>capacity</code> is zero, which is a special case and does not mean the buffer is invalid. In this case, <code>length</code> can only be shrunk, but must not be grown beyond its original value.</p></div>
+<div class="paragraph"><p>Rejected alternative choices for this identifier:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+size
+</p>
+</li>
+<li>
+<p>
+used
+</p>
+</li>
+<li>
+<p>
+len
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>"size" is too generic. It also raises questions whether the null terminator is included in case of C strings or not. It is better to use "len" or "length" instead, at least for C strings, because of the connotation with the <code>strlen()</code> function, which also does not include the null byte in its result.</p></div>
+<div class="paragraph"><p>"used" infers that the buffer already has some previous history of <strong>usage</strong>. This must not be the case. A newly allocated buffer might be <strong>usable</strong>, but it is not yet <strong>used</strong>.</p></div>
+<div class="paragraph"><p>"len" would have been an appropriate choice of we named the other size-variable "cap". But as we named it "capacity", we had to use the full name here too, for maintaining a sense of naming consistency.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_capacity">capacity</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This is the "physical" length of the allocated buffer, or more precisely its allocation size.</p></div>
+<div class="paragraph"><p>It must always be larger or at least the same as <code>length</code>, except if it is zero.</p></div>
+<div class="paragraph"><p>The latter means that this slice does not represent a complete allocated buffer, but just a part of it.</p></div>
+<div class="paragraph"><p>Alternatively, it can mean that it refers to a statically allocated object, or even an <code>auto</code>-variable on the stack, rather than to something dynamically allocated.</p></div>
+<div class="paragraph"><p>In other words, a <code>capacity</code> of zero states that this slize cannot be deallocated or grown.</p></div>
+<div class="paragraph"><p>Neither can a null-terminator be added to it, except there is enough space within the <code>length</code>.</p></div>
+<div class="paragraph"><p>It is permissible for such a slice to move <code>start</code> or reduce the value of <code>length</code>, but the new effective settings of the slice must be within the bounds of the old slice.</p></div>
+<div class="paragraph"><p>If <code>capacity</code> is not null, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.</p></div>
+<div class="paragraph"><p>Actually, it does not have to be malloc/realloc at all - but it must always be the same set of allocation functions, which is easy to achieve because allocation, reallocation and deallocation are all handled by the same function. (At least as of now in the R4G framework.)</p></div>
+<div class="paragraph"><p>If <code>capacity</code> is null, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.</p></div>
+<div class="paragraph"><p>This semantics have the advantage that slices can be used for writable static char arrays as well as dynamically allocated strings.</p></div>
+<div class="paragraph"><p>Regarding the name choices - the following alternative names for the identifier were considered (or were used on earlier iterations of the concept):</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+size
+</p>
+</li>
+<li>
+<p>
+reserved
+</p>
+</li>
+<li>
+<p>
+allocated
+</p>
+</li>
+<li>
+<p>
+cap
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>Those were eventually rejected for the following reasons:</p></div>
+<div class="paragraph"><p>"size" is too generic. What&#8217;s the difference between a "size" and a "length"? Not really any.</p></div>
+<div class="paragraph"><p>"reserved" sounds like something that shall be used at some point in the future, but must not be used already now.</p></div>
+<div class="paragraph"><p>"allocated" seems appropriate if the slice has actually been dynamically allocated - but this is no longer necessarily the case using the current semantics.</p></div>
+<div class="paragraph"><p>"cap" could be misinterpreted as "capped", which is not intented.</p></div>
+<div class="paragraph"><p>Plus, "Go" also names it "capacity". It may be a little long. But it works and is fitting. There is no contradiction. Therefore we adopted this choice.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_the_read_only_problem">The read-only problem</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Original the hope was that slices could reference writable buffers as well as read-only buffers, such as the contents of constant strings literals.</p></div>
+<div class="paragraph"><p>However, that was not possible.</p></div>
+<div class="paragraph"><p><code>start</code> cannot be a "<code>char const *</code>", because then no-one could modify the contents of a writable buffer.</p></div>
+<div class="paragraph"><p>But unless it <strong>is</strong> a "<code>char const *</code>", it is not possible (without a cast) to assign a pointer to a constant literal to <code>start</code>.</p></div>
+<div class="paragraph"><p>I tried several approaches, and one using unions actually worked. However, it looked like dirty trick to me, and so I abandoned that approach, too.</p></div>
+<div class="paragraph"><p>The new solution is the <code>slice_view</code> type. This is a stripped-down version of <code>slice</code> and has a "<code>char const *</code>" as the type for its <code>start</code> field. Therefor, this can now be used for slicing constant literal strings.</p></div>
+<div class="paragraph"><p>However, it is a new type, and as such incompatible with <code>slice</code>.</p></div>
+<div class="paragraph"><p>While it has a compatible structure (it is actually a prefix of <code>slice</code>) and any <code>slice</code> <strong>could</strong> therefore be casted into a <code>slice_view</code>, it would still be casting like casting away constantness.</p></div>
+<div class="paragraph"><p>But we do this, we could cast a constant string literal into a non-constant one also, and then use the normal <code>slice</code> on it.</p></div>
+<div class="paragraph"><p>In other words, the same mess, just more complicated.</p></div>
+<div class="paragraph"><p>In order to avoid this and user a clean approach, I instead provided the <code>slice2view_c0()</code> function which copies the two common fields from the writable <code>slice</code> to the read-only <code>slice_view</code>.</p></div>
+<div class="paragraph"><p>This is safe and this is clean.</p></div>
+<div class="paragraph"><p>A little inefficient maybe, but I hope such conversions will not be necessary too often.</p></div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2020-04-25 05:20:50 CEST
+</div>
+</div>
+</body>
+</html>

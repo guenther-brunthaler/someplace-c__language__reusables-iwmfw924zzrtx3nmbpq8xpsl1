@@ -1,0 +1,168 @@
+Handling of buffers with different allocation properties
+========================================================
+v2022.28
+
+This document is part of the R4G (Resource control framework, 4th generation) project.
+
+There have been many implementations of those during the years, but the newest approach (shamelessly stealing from "Go") does like this:
+
+[listing]
+--
+include::slice.h[]
+--
+
+As simple a this structure is, there are many things that need to be said about it, and which have gone wrong in previous implementations.
+
+There is also a fundamental change to earlier iterations of the concept, which is that slices can refer to dynamically allocated buffers as well as to statically allocated or temporary (on the stack) ones.
+
+
+start
+-----
+
+This is a `char *` and not a `void *`. At first this might seem wrong, because such a buffer can hold any type of data, which might not necessarily be text.
+
+But if one studies the C standard more closely will see that the type `char` is not reserved for text exclusively.
+
+Instead, the C standard defines a `char` the same as a `byte`. At least when it comes to the length of the object, because the standard clearly states:
+
+* The value returned by the `sizeof` operator represents the number of 'bytes' in the object.
+
+* The `sizeof(char)` must be `1`.
+
+It follows, that a `char` always has the same size as a byte - and this is all we care about im case a binary buffer, because we will see it as an opaque array of *bytes*.
+
+Also, no pointer arithmetic can be done on "`void *`"s. They need to be casted into something, which is not what we want when dealing with byte arrays. Therfore, `char *` is actually a very good general type for byte arrays, despite the connotations with human-readable text it might evoke.
+
+The only question is whether other identifiers that 'start' might be more appropriate or practical:
+
+* bytes
+* begin
+* start
+* buffer
+* p
+* contents
+
+"bytes", although correct from the standpoint of the slice object, sounds strange of the slice is used in a context where it ought to represent a particular data type rather than opaque bytes. It is therefore a good idea not to express the type trait too strongly.
+
+* "begin" has the advantage that the C++ standard library calls it so. However, the point of a slice is that it cannot just point at the beginning of a buffer, but also somewhere into its middle.
+
+* "start" - well this sound also good. Maybe even better than "data", because "start" + "length" fit together just fine. However, data is shorter - less to type. "data" + "length" also sound OK, even though "data" + "size" would sound even better.
+
+* "buffer" was a good choice as long as the object exclusively referred to dynamically allocated memory blocks. However, this is no longer the case. And no-one would, for instance, call a part of a statically-allocated read-only string literal a "buffer".
+
+* "p" is nice, but too generic.
+
+* "contents" also sounds ok, but it is a little long. It is also very generic, just like data, but more to type.
+
+One reason why "start" has been finally chosen was the fact that the combination "start" + "length" fit semantically together just fine.
+
+Before "start", "data" has been used, which had the advantage of being shorter and thus less to type. However, the difference is just a single character, and "data" is a bit too generic for my taste.
+
+In R4G, the semantics of `start` is:
+
+* If it is null, then the slice is "inactive". It exists, but no memory block is currently associated with it. This makes the slice not invalid, but accessing the referenced memory is obviously not allowed.
+
+* `start` is not normally null-terminated. While it can be, the functions dealing with slices do not assume or ensure this. Null-termination is frequently required for passing strings to C library functions, but in this case special slice-functions need to be called which will add such a null terminator explicitly.
+
+* If `start` is null, then both `length` and `capacity` must also be null.
+
+* If `start` is not null, then both `length` and `capacity` may nevertheless be null. See below for an explanation.
+
+
+length
+------
+
+This is the "logical" length of the allocated buffer. In case of a text string, this represents the number of actual characters in the represented text. It does *not* include the null terminator, even if one is actually present.
+
+The function for null-terminating a slice will write the null-terminator after the portion of the buffer indicated by `length`, but of course still inside its `capacity`.
+
+`length` refers to the currently "used" part of the buffer. It can be enlarged up to the value represented by `capacity` without a need to reallocate the buffer. However, it is possible that `capacity` is zero, which is a special case and does not mean the buffer is invalid. In this case, `length` can only be shrunk, but must not be grown beyond its original value.
+
+Rejected alternative choices for this identifier:
+
+* size
+* used
+* len
+
+"size" is too generic. It also raises questions whether the null terminator is included in case of C strings or not. It is better to use "len" or "length" instead, at least for C strings, because of the connotation with the `strlen()` function, which also does not include the null byte in its result.
+
+"used" infers that the buffer already has some previous history of *usage*. This must not be the case. A newly allocated buffer might be *usable*, but it is not yet *used*.
+
+"len" would have been an appropriate choice of we named the other size-variable "cap". But as we named it "capacity", we had to use the full name here too, for maintaining a sense of naming consistency.
+
+
+capacity
+--------
+
+This is the "physical" length of the allocated buffer, or more precisely its allocation size.
+
+It must always be larger or at least the same as `length`, except if it is zero.
+
+The latter means that this slice does not represent a complete allocated buffer, but just a part of it.
+
+Alternatively, it can mean that it refers to a statically allocated object, or even an `auto`-variable on the stack, rather than to something dynamically allocated.
+
+In other words, a `capacity` of zero states that this slice cannot be deallocated or grown.
+
+Neither can a null-terminator be added to it, except if there is some appropriate position within the current `length` where to put it. (This will actually split the buffer into a C string prefix and an unused buffer suffix which will be ignored by readers of the C string.)
+
+It is permissible for such a slice to move `start` or reduce the value of `length`, but the new effective settings of the slice must be within the bounds of the old slice.
+
+If `capacity` is not null, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.
+
+Actually, it does not have to be malloc/realloc at all - but it must always be the same set of allocation functions, which is easy to achieve because allocation, reallocation and deallocation are all handled by the same function. (At least as of now in the R4G framework.)
+
+If `capacity` is null, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.
+
+These semantics have the advantage that slices can be used for writable static char arrays as well as dynamically allocated strings.
+
+Regarding the name choices - the following alternative names for the identifier were considered (or were used on earlier iterations of the concept):
+
+* size
+* reserved
+* allocated
+* cap
+
+Those were eventually rejected for the following reasons:
+
+"size" is too generic. What's the difference between a "size" and a "length"? Not really any.
+
+"reserved" sounds like something that shall be used at some point in the future, but must not be used already now.
+
+"allocated" seems appropriate if the slice has actually been dynamically allocated - but this is no longer necessarily the case using the current semantics.
+
+"cap" could be misinterpreted as "capped", which is not intented.
+
+Plus, "Go" also names it "capacity". It may be a little long. But it works and is fitting. There is no contradiction. Therefore we adopted this choice.
+
+
+The read-only problem
+---------------------
+
+Originally the hope was that slices could reference writable buffers as well as read-only buffers, such as the contents of constant strings literals.
+
+However, that was not possible.
+
+`start` cannot be a "`char const *`", because then no-one could modify the contents of a writable buffer.
+
+But unless it *is* a "`char const *`", it is not possible (without a cast) to assign a pointer to a constant literal to `start`.
+
+I tried several approaches, and one using unions actually worked. However, it looked like a dirty trick to me, and so I abandoned that approach too.
+
+The new solution is the `slice_view` type. This is a stripped-down version of `slice` and has a "`char const *`" as the type for its `start` field. Therefore, this can now be used for slicing constant literal strings.
+
+However, it is a new type, and as such incompatible with `slice`.
+
+While it has a compatible structure (it is actually a prefix of `slice`) and any `slice` *could* therefore be casted into a `slice_view`, it would still be casting like casting away constantness.
+
+But if we did this, we could also cast a constant string literal into a non-constant one accidentally, and then use the normal `slice` on it.
+
+In other words, the same mess, just more complicated.
+
+In order to avoid this and use a clean approach, I instead provided the `slice2view_c0()` function which copies the two common fields from the writable `slice` to the read-only `slice_view`.
+
+This is safe and this is clean.
+
+A little inefficient maybe, but I hope such conversions will not be necessary too often.
+
+Also there is hope the compiler might detect what we are doing and optimize that somehow. Maybe the conversion function arguments may need some adjustment to actually get there.
