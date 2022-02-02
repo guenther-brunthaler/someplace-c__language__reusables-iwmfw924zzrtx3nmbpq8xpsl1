@@ -1,0 +1,90 @@
+#! /bin/sh
+# v2022.33
+
+set -e
+trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
+
+tabs=
+move=false
+while getopts mt: opt
+do
+	case $opt in
+		t) tabs=`expr x"$OPTARG" : x'\([1-9][0-9]*\)$'`;;
+		m) move=true;;
+		*) false || exit
+	esac
+done
+shift `expr $OPTIND - 1 || :`
+
+template_header() {
+	cat << '---' | { test "$tabs" && expand -t "$tabs" || cat; }
+/* #include <filename_8qdxcgtqv6aphz78qrwya5ypm.h> */
+
+#ifndef HEADER_8QDXCGTQV6APHZ78QRWYA5YPM_INCLUDED
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+/* Actual content goes here... */
+
+#ifdef __cplusplus
+	}
+#endif
+#endif /* !HEADER_8QDXCGTQV6APHZ78QRWYA5YPM_INCLUDED */
+---
+}
+rx_fname='filename'
+rx_contents='here'
+rx_sym='[_[:alnum:]]*INCLUDED'
+
+nsym=`
+	uuidgen -t | perl -MMath::BigInt -e '
+		$a= "09ANPZ";
+		$a =~ s/(..)(?=(?:..)+$)/\1:/g;
+		$a= join "", map {
+			($a, $b)= split //, $_; $a .. $b
+		} split /:/, $a;
+		$u= <>; $u =~ s/[^[:xdigit:]]//g;
+		$u= Math::BigInt->from_hex($u);
+		$o= "";
+		for ($i= 25; $i--; ) {
+			$o= substr($a, $u % 35, 1) . $o;
+			$u/= 35;
+		};
+		print "HEADER_${o}_INCLUDED\n";
+	'
+`
+rx_UU='[0-9A-NP-Z]\{25\}'
+rx_uu='[0-9a-np-z]\{25\}'
+uu=`echo $nsym | sed "s/.*\\($rx_UU\\).*/\\1/; t; d" | tr A-Z a-z`
+
+subst_sym() {
+	template_header | sed "s/$rx_sym/$nsym/; s/$rx_uu/$uu/"
+}
+
+case $# in
+	0) subst_sym;;
+	*)
+		for hf
+		do
+			test -f "$hf"
+			dir=`dirname -- "$hf"`
+			nh=`basename -- "$hf"`
+			hbn=${nh%.*}
+			nh=${hbn}_$uu.h
+			test ! -e "$nh"
+			{
+				subst_sym | sed "
+					s/$rx_fname/$hbn/
+					/$rx_contents/q
+				" | head -n -1
+				cat < "$hf"
+				subst_sym | sed "1,/$rx_contents/d"
+			} > "$nh"
+			if $move
+			then
+				rm -- "$hf"
+			fi
+			printf '%s\n' "$nh"
+		done
+esac
