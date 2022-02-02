@@ -13,7 +13,6 @@
  * 
  * This source file is free software.
  * Distribution is permitted under the terms of the LGPLv3.
- *
  */
 
 

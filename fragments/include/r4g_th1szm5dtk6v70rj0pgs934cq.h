@@ -1,4 +1,13 @@
-/* #include <r4g_th1szm5dtk6v70rj0pgs934cq.h> */
+/*
+ * #include <r4g_th1szm5dtk6v70rj0pgs934cq.h>
+ *
+ * Version 2022.33
+ *
+ * Copyright (c) 2022 Guenther Brunthaler. All rights reserved.
+ *
+ * This script is free software.
+ * Distribution is permitted under the terms of the GPLv3.
+ */
 
 #ifndef HEADER_TH1SZM5DTK6V70RJ0PGS934CQ_INCLUDED
 #ifdef __cplusplus

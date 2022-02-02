@@ -1,3 +1,14 @@
+/*
+ * #include <slice_u2e1pat7kfdmqk54z49ghgd0y.h>
+ *
+ * Version 2022.33
+ *
+ * Copyright (c) 2022 Guenther Brunthaler. All rights reserved.
+ *
+ * This script is free software.
+ * Distribution is permitted under the terms of the GPLv3.
+ */
+
 #ifndef HEADER_U2E1PAT7KFDMQK54Z49GHGD0Y_INCLUDED
 #ifdef __cplusplus
    extern "C" {
