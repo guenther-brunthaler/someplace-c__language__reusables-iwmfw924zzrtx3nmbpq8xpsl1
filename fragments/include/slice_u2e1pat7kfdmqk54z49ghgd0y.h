@@ -1,7 +1,7 @@
 /*
  * #include <slice_u2e1pat7kfdmqk54z49ghgd0y.h>
  *
- * Version 2022.33
+ * Version 2022.77
  *
  * Copyright (c) 2022 Guenther Brunthaler. All rights reserved.
  *
@@ -34,12 +34,6 @@ typedef struct {
    char const *start; /* Null only if length is also 0. */
    size_t length; /* Does *not* include the '\0' if it is a C string. */
 } slice_view;
-
-/* A buffer slice with zero overhead convertible into a slice_view. */
-typedef union {
-   slice rw; /* The actual buffer. */
-   slice_view ro; /* Read-only view of buffer's current contents. */
-} flexbuf;
 
 /* Converts a writable slice into a read-only slice_view. Only the latter ones
  * can be used to slice constant string literals (or constant buffer contents

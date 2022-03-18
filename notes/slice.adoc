@@ -1,6 +1,6 @@
 Handling of buffers with different allocation properties
 ========================================================
-v2022.28
+v2022.77
 
 This document is part of the R4G (Resource control framework, 4th generation) project.
 
@@ -8,7 +8,7 @@ There have been many implementations of those during the years, but the newest a
 
 [listing]
 --
-include::slice.h[]
+include::slice_u2e1pat7kfdmqk54z49ghgd0y.h[]
 --
 
 As simple a this structure is, there are many things that need to be said about it, and which have gone wrong in previous implementations.
@@ -147,7 +147,16 @@ However, that was not possible.
 
 But unless it *is* a "`char const *`", it is not possible (without a cast) to assign a pointer to a constant literal to `start`.
 
-I tried several approaches, and one using unions actually worked. However, it looked like a dirty trick to me, and so I abandoned that approach too.
+I tried several approaches, and one using unions actually worked. I defined a "`flexbuf`" `union` which overlaid a writable `struct` with a read-only `struct` using a compatible field layout, allowing zero-cost in-place conversion between read-write and read-only buffer slice structures.
+
+However, I abandoned this approach too because of the following disadvantages:
+
+* It is dirty. The C standard does not guarantee that different types must align perfectly when overapping, even though there is no reason why they should not.
+
+* It is not safe. Accessing a different union overlay is not much safer than an `reinterpret_cast<>`, `C++`-wise speaking. Actually it is even less safe because of the field boundaries present in the `struct`.
+
+* Probably no one would ever use a `slice`, because a `flexbuf`
+provides the same features plus zero-cost read-only access.
 
 The new solution is the `slice_view` type. This is a stripped-down version of `slice` and has a "`char const *`" as the type for its `start` field. Therefore, this can now be used for slicing constant literal strings.
 
