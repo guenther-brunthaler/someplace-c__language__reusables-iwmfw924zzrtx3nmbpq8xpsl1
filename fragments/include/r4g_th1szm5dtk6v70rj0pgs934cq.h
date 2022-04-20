@@ -1,7 +1,7 @@
 /*
  * #include <r4g_th1szm5dtk6v70rj0pgs934cq.h>
  *
- * Version 2022.33
+ * Version 2022.110
  *
  * Copyright (c) 2022 Guenther Brunthaler. All rights reserved.
  *
@@ -23,10 +23,10 @@ struct resource {
 
 extern resource *rlist;
 
-void release_c1(void *until);
-void add_resource_c0(resource *r, void (*action)(void), void *ivars);
-void *unlink_resource_c0(void);
-void error_c1(char const *msg);
+void release(void *until);
+void add_resource(resource *r, void (*action)(void), void *ivars);
+void *unlink_resource(void);
+void error(char const *msg);
 
 #ifdef __cplusplus
 	}

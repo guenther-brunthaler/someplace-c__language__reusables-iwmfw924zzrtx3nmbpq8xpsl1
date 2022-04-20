@@ -168,7 +168,7 @@ But if we did this, we could also cast a constant string literal into a non-cons
 
 In other words, the same mess, just more complicated.
 
-In order to avoid this and use a clean approach, I instead provided the `slice2view_c0()` function which copies the two common fields from the writable `slice` to the read-only `slice_view`.
+In order to avoid this and use a clean approach, I instead provided the `slice2view()` function which copies the two common fields from the writable `slice` to the read-only `slice_view`.
 
 This is safe and this is clean.
 

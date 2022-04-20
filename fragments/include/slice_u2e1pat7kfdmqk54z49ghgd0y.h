@@ -1,7 +1,7 @@
 /*
  * #include <slice_u2e1pat7kfdmqk54z49ghgd0y.h>
  *
- * Version 2022.77
+ * Version 2022.110
  *
  * Copyright (c) 2022 Guenther Brunthaler. All rights reserved.
  *
@@ -38,7 +38,7 @@ typedef struct {
 /* Converts a writable slice into a read-only slice_view. Only the latter ones
  * can be used to slice constant string literals (or constant buffer contents
  * in general). */
-void slice2view_c0(slice_view *dst, slice const *src);
+void slice2view(slice_view *dst, slice const *src);
 
 #ifdef __cplusplus
    }
