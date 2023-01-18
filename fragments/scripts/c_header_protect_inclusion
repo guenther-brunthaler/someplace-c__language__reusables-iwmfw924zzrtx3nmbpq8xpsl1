@@ -1,5 +1,16 @@
 #! /bin/sh
-# v2022.33
+
+# Pass existing header files without multiple-"#include" protection or
+# UUID-based basename as arguments. The script will generate a new header file
+# with include protection and UUID-based basename for all argument pathnames.
+#
+# Be sure to use the -t option unless you want to indent using horizontal
+# tabulation characters!
+#
+# The -m option replaces the original header files with the renamed and
+# modified versions.
+#
+# v2023.18
 
 set -e
 trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
