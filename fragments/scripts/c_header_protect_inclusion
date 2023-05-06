@@ -4,23 +4,28 @@
 # UUID-based basename as arguments. The script will generate a new header file
 # with include protection and UUID-based basename for all argument pathnames.
 #
-# Be sure to use the -t option unless you want to indent using horizontal
+# Be sure to use the -s option unless you want to indent using horizontal
 # tabulation characters!
 #
 # The -m option replaces the original header files with the renamed and
 # modified versions.
 #
-# v2023.18
+# By default, random UUIDs are generated for security reasons. However, the -r
+# or -t option may be specified to request random- or time+node based UUIDs.
+#
+# v2023.126
 
 set -e
 trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
 
 tabs=
 move=false
-while getopts mt: opt
+uuidgen_opts=-r
+while getopts rtms: opt
 do
 	case $opt in
-		t) tabs=`expr x"$OPTARG" : x'\([1-9][0-9]*\)$'`;;
+		[rt]) uuidgen_opts=-$opt;;
+		s) tabs=`expr x"$OPTARG" : x'\([1-9][0-9]*\)$'`;;
 		m) move=true;;
 		*) false || exit
 	esac
@@ -49,7 +54,7 @@ rx_contents='here'
 rx_sym='[_[:alnum:]]*INCLUDED'
 
 nsym=`
-	uuidgen -t | perl -MMath::BigInt -e '
+	uuidgen $uuidgen_opts | perl -MMath::BigInt -e '
 		$a= "09ANPZ";
 		$a =~ s/(..)(?=(?:..)+$)/\1:/g;
 		$a= join "", map {
