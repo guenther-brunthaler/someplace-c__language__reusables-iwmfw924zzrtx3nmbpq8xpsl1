@@ -1,12 +1,12 @@
 Handling of buffers with different allocation properties
 ========================================================
-v2022.77
+v2023.126
 
-This document is part of the R4G (Resource control framework, 4th generation) project.
+This document is part of the 'R4G' (Resource control framework, 4th generation) project.
 
 There have been many implementations of those during the years, but the newest approach (shamelessly stealing from "Go") does like this:
 
-[listing]
+[source,c]
 --
 include::slice_u2e1pat7kfdmqk54z49ghgd0y.h[]
 --
@@ -33,11 +33,11 @@ It follows, that a `char` always has the same size as a byte - and this is all w
 
 Also, no pointer arithmetic can be done on "`void *`"s. They need to be casted into something, which is not what we want when dealing with byte arrays. Therfore, `char *` is actually a very good general type for byte arrays, despite the connotations with human-readable text it might evoke.
 
-The only question is whether other identifiers that 'start' might be more appropriate or practical:
+The only question is whether other identifiers than 'start' might be more appropriate or practical:
 
 * bytes
 * begin
-* start
+* data
 * buffer
 * p
 * contents
@@ -46,7 +46,7 @@ The only question is whether other identifiers that 'start' might be more approp
 
 * "begin" has the advantage that the C++ standard library calls it so. However, the point of a slice is that it cannot just point at the beginning of a buffer, but also somewhere into its middle.
 
-* "start" - well this sound also good. Maybe even better than "data", because "start" + "length" fit together just fine. However, data is shorter - less to type. "data" + "length" also sound OK, even though "data" + "size" would sound even better.
+* "data" - well this sound also good. It is shorter than "start" - less to type. "data" + "length" also sound OK.
 
 * "buffer" was a good choice as long as the object exclusively referred to dynamically allocated memory blocks. However, this is no longer the case. And no-one would, for instance, call a part of a statically-allocated read-only string literal a "buffer".
 
