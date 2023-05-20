@@ -2,7 +2,7 @@
 
 # Script-level linkage editor.
 #
-# Version 2023.140
+# Version 2023.140.1
 # Copyright (c) 2023 Guenther Brunthaler. All rights reserved.
 #
 # This script is free software.
@@ -63,6 +63,7 @@ while (defined($_ = <>)) {
                   ;
                }
                $files{$ARGV}->{provides} = $id;
+               $files{$ARGV}->{lno} = $.;
                $defs{$id} = $files{$ARGV};
                add_req $id, "^$id"; add_req "${id}\$", $id;
             }
@@ -120,3 +121,12 @@ while (defined($_ = <>)) {
       }
    }
 }
+=not
+{
+   use Data::Dumper;
+   print Data::Dumper::Dumper([
+         names => \%names, canon => \%canon, files => \%files
+      ,  defs => \%defs, prqs => \%prqs
+   ]), "\n";
+}
+=cut
