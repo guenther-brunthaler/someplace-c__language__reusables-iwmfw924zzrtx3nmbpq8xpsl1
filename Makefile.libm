@@ -1,0 +1,27 @@
+.POSIX:
+
+# You may redefine these settings via the "make" command line or export them
+# as environment variables and (in the latter case only) also
+# "export MAKEFLAGS=e". Or just edit this file.
+CPPFLAGS = -D NDEBUG
+CFLAGS = -O
+LDFLAGS = -s
+
+# No need to redefine these.
+LIBS = -lm
+
+TARGETS = myprog
+
+.PHONY: all clean
+
+all: $(TARGETS)
+
+clean:
+	-rm $(TARGETS)
+
+AUG_CFLAGS = $(CPPFLAGS) $(CFLAGS)
+AUG_LDFLAGS = $(LDFLAGS) $(LIBS)
+
+.c:
+	$(CC) $(AUG_CFLAGS) -o $@ $< $(AUG_LDFLAGS)
+

@@ -21,9 +21,9 @@
  * object. Primarily meant to represent binary bytes, but also works for
  * text. */
 typedef struct {
-   char *start; /* Null if the buffer has not been allocated yet. */
-   size_t length; /* Does *not* include the '\0' if it is a C string. */
-   size_t capacity; /* Zero if start == null or if slice is a window. */
+   char *start; /* If NULL then yet unallocated buffer. */
+   size_t length; /* Must be <= capacity but only if capacity != 0. */
+   size_t capacity; /* If non-zero or start == NULL: Slice is resizable. */
 } slice;
 
 /* Describes a read-only portion of a memory area. Frequently but not
