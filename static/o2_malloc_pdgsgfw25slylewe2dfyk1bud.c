@@ -1,6 +1,6 @@
-/* Provides: o2_malloc-pdgsgfw25slylewedsxulhhg4 */
-/* Requires: stdlib.h-p68c8i02e9jtk0r1qzlaw60zy */
-/* Requires: die-8vfxhrv9wgqn63mgii11qadc3 */
+/* Provides: o2_malloc-pdgsgfw25slylewe2dfyk1bud */
+/* Requires: stdlib.h-p68c8i02e9jtk0r18n9hz1g3w */
+/* Requires: die-8vfxhrv9wgqn63me01kn2eege */
 
 static void *o2_malloc(size_t bytes) {
    void *p;

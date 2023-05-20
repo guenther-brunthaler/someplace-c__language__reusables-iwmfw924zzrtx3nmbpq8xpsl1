@@ -1,9 +1,9 @@
-/* Provides: sscanf_ck-pd2rtamtckb2x3049pavlw0kh */
-/* Requires: stdio.h-8vagj4enqe40ubxmmurd7q25x */
-/* Requires: string.h-8vbaylzhw8ud12b892hgml1mf */
-/* Requires: stdarg.h-8vc3k18lhrgxrla3kkzv3wevw */
-/* Requires: assert.h-8vdn7fihgdlw3y9arnm3t02zm */
-/* Requires: die-8vfxhrv9wgqn63mgii11qadc3 */
+/* Provides: sscanf_ck-pd2rtamtckb2x302mhk4dta4e */
+/* Requires: stdio.h-8vagj4enqe40ubxjpqrpvyr05 */
+/* Requires: string.h-8vbaylzhw8ud12b5nh8i1ztkv */
+/* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
+/* Requires: assert.h-8vdn7fihgdlw3y9ap6a5tvqlu */
+/* Requires: die-8vfxhrv9wgqn63me01kn2eege */
 
 /* sscanf() with error checking.
  *

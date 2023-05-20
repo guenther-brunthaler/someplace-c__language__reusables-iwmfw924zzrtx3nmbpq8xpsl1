@@ -1,5 +1,5 @@
-# Provides: cscript_prefix-0ztbnt1k9mi9qavqmwbgbavkl
-# Within-Group: script_prefixes-919vrbgjat8xhgv9pk6aaebc6
+# Provides: cscript_prefix-0ztbnt1k9mi9qavnh18730dr5
+# Within-Group: script_prefixes-919vrbgjat8xhgv6bmviwkfze
 #! /bin/sh
 : v2022.179.2; set -e; cleanup() {
 	rc=$?; test "$TD" && rm -r -- "$TD"
