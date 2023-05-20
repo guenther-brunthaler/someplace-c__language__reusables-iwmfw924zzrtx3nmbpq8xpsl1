@@ -13,4 +13,3 @@ static void printf_ck(char const *format, ...) {
    }
    if (rc < 0) raise_write_error();
 }
-

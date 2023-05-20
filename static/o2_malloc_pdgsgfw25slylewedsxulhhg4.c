@@ -22,4 +22,3 @@ static void *o2_malloc(size_t bytes) {
    }
    return p;
 }
-

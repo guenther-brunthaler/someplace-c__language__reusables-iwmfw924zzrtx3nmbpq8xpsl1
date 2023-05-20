@@ -31,4 +31,3 @@ static void sscanf_ck(
    }
    va_end(args);
 }
-

@@ -17,4 +17,3 @@ static void no_options(int *i_ref, int argc, char *const *argv) {
    }
    *i_ref = i;
 }
-

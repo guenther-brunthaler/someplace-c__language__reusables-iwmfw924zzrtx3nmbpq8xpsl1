@@ -14,4 +14,3 @@ static void die(char const *format, ...) {
    free_all_resources();
    exit(EXIT_FAILURE);
 }
-

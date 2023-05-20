@@ -4,4 +4,3 @@
 static void raise_write_error(void) {
    die("Write error!");
 }
-

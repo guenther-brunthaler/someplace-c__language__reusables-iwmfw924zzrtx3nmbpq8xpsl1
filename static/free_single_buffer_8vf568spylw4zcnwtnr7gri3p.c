@@ -6,4 +6,3 @@ static void *all_dynamically_allocated_resources;
 static void free_all_resources(void) {
    free(all_dynamically_allocated_resources);
 }
-
