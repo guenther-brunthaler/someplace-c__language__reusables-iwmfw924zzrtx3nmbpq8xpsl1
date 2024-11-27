@@ -46,7 +46,7 @@ The only question is whether other identifiers than 'start' might be more approp
 
 * "begin" has the advantage that the C++ standard library calls it so. However, the point of a slice is that it cannot just point at the beginning of a buffer, but also somewhere into its middle.
 
-* "data" - well this sound also good. It is shorter than "start" - less to type. "data" + "length" also sound OK.
+* "data" - well this sounds also good. It is shorter than "start" - less to type. "data" + "length" also sound OK.
 
 * "buffer" was a good choice as long as the object exclusively referred to dynamically allocated memory blocks. However, this is no longer the case. And no-one would, for instance, call a part of a statically-allocated read-only string literal a "buffer".
 
