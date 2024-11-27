@@ -1,6 +1,6 @@
 Handling of buffers with different allocation properties
 ========================================================
-v2023.126
+v2024.332
 
 This document is part of the 'R4G' (Resource control framework, 4th generation) project.
 
@@ -23,7 +23,7 @@ This is a `char *` and not a `void *`. At first this might seem wrong, because s
 
 But if one studies the C standard more closely will see that the type `char` is not reserved for text exclusively.
 
-Instead, the C standard defines a `char` the same as a `byte`. At least when it comes to the length of the object, because the standard clearly states:
+Instead, the C standard defines a `char` to represent a `byte`. At least when it comes to the length of the object, because the standard clearly states:
 
 * The value returned by the `sizeof` operator represents the number of 'bytes' in the object.
 
@@ -54,7 +54,7 @@ The only question is whether other identifiers than 'start' might be more approp
 
 * "contents" also sounds ok, but it is a little long. It is also very generic, just like data, but more to type.
 
-One reason why "start" has been finally chosen was the fact that the combination "start" + "length" fit semantically together just fine.
+One reason why "start" has been finally chosen was the fact that the combination "start" + "length" fit semantically together just fine. "start" + "active" is not as good but still sounds OK.
 
 Before "start", "data" has been used, which had the advantage of being shorter and thus less to type. However, the difference is just a single character, and "data" is a bit too generic for my taste.
 
@@ -64,72 +64,77 @@ In R4G, the semantics of `start` is:
 
 * `start` is not normally null-terminated. While it can be, the functions dealing with slices do not assume or ensure this. Null-termination is frequently required for passing strings to C library functions, but in this case special slice-functions need to be called which will add such a null terminator explicitly.
 
-* If `start` is null, then both `length` and `capacity` must also be null.
+* If `start` is null, then both `active` and `allocated` must also be null.
 
-* If `start` is not null, then both `length` and `capacity` may nevertheless be null. See below for an explanation.
+* If `start` is not null, then both `active` and `allocated` may nevertheless be null. See below for an explanation.
 
 
-length
+active
 ------
 
-This is the "logical" length of the allocated buffer. In case of a text string, this represents the number of actual characters in the represented text. It does *not* include the null terminator, even if one is actually present.
+This is the "logical" length of the allocated buffer. In case of a text string, this represents the number of actual characters in the represented text. It does *not* include the null terminator, even if one is actually present. The idea is to ensure assert(strlen(start) == active) in the case of C strings.
 
-The function for null-terminating a slice will write the null-terminator after the portion of the buffer indicated by `length`, but of course still inside its `capacity`.
+The function slice0t() for null-terminating a slice will write the null-terminator after the portion of the buffer indicated by `active`, but of course still inside its `allocated`.
 
-`length` refers to the currently "used" part of the buffer. It can be enlarged up to the value represented by `capacity` without a need to reallocate the buffer. However, it is possible that `capacity` is zero, which is a special case and does not mean the buffer is invalid. In this case, `length` can only be shrunk, but must not be grown beyond its original value.
+`active` refers to the currently "usable" part of the buffer. This means that part of the buffer either contains actually valid data, or it contains undefined bytes which are expected to be overwritten by new data to be stored there. It can be enlarged up to the value represented by `allocated` without a need to reallocate the buffer. However, it is possible that `allocated` is zero, which is a special case and does not mean the buffer is invalid. In this case, `active` can only be shrunk, but must not be grown beyond its original value.
 
-Rejected alternative choices for this identifier:
+The following names for the identifier have been considered (or were used on earlier iterations of the concept):
 
-* size
+* active
 * used
+* usable
+* size
+* length
 * len
+
+"active" has the advantage over "usable" or "length" in that it suggests validity for general usage without also implying validity of the data currently stored there. In particular, the "active" portion of a buffer may be ready to receive new data, even if that data has not been "used" yet because it is still uninitialized.
 
 "size" is too generic. It also raises questions whether the null terminator is included in case of C strings or not. It is better to use "len" or "length" instead, at least for C strings, because of the connotation with the `strlen()` function, which also does not include the null byte in its result.
 
 "used" infers that the buffer already has some previous history of *usage*. This must not be the case. A newly allocated buffer might be *usable*, but it is not yet *used*.
 
-"len" would have been an appropriate choice of we named the other size-variable "cap". But as we named it "capacity", we had to use the full name here too, for maintaining a sense of naming consistency.
+"usable" does not actually infer that the current contents of the buffer are valid, because it does not tell for what it shall be usable. So it can also be usable to be overwritten by valid data. However, there is a much stronger connotation to valid data than to uninitialized data "usable" for being overwritten.
+
+"len" would have been an appropriate choice of we named the other size-variable "cap". But as we named it "allocated", we had to use the full name here too, for maintaining a sense of naming consistency.
 
 
-capacity
---------
+allocated
+---------
 
 This is the "physical" length of the allocated buffer, or more precisely its allocation size.
 
-It must always be larger or at least the same as `length`, except if it is zero.
+It must always be larger or at least the same as `active`, except if it is zero.
 
 The latter means that this slice does not represent a complete allocated buffer, but just a part of it.
 
 Alternatively, it can mean that it refers to a statically allocated object, or even an `auto`-variable on the stack, rather than to something dynamically allocated.
 
-In other words, a `capacity` of zero states that this slice cannot be deallocated or grown.
+In other words, a `allocated` of zero states that this slice cannot be deallocated or grown.
 
-Neither can a null-terminator be added to it, except if there is some appropriate position within the current `length` where to put it. (This will actually split the buffer into a C string prefix and an unused buffer suffix which will be ignored by readers of the C string.)
+Neither can a null-terminator be added to it, except if there is some appropriate position within the current `active` where to put it. (This will actually split the buffer into a C string prefix and an unused buffer suffix which will be ignored by readers of the C string.)
 
-It is permissible for such a slice to move `start` or reduce the value of `length`, but the new effective settings of the slice must be within the bounds of the old slice.
+It is permissible for such a slice to move `start` or reduce the value of `active`, but the new effective settings of the slice must be within the bounds of the old slice.
 
-If `capacity` is not null, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.
+If `allocated` is not null, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.
 
 Actually, it does not have to be malloc/realloc at all - but it must always be the same set of allocation functions, which is easy to achieve because allocation, reallocation and deallocation are all handled by the same function. (At least as of now in the R4G framework.)
 
-If `capacity` is null, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.
+If `allocated` is null, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.
 
 These semantics have the advantage that slices can be used for writable static char arrays as well as dynamically allocated strings.
 
-Regarding the name choices - the following alternative names for the identifier were considered (or were used on earlier iterations of the concept):
+The following names for the identifier have been considered (or were used on earlier iterations of the concept):
 
 * size
 * reserved
 * allocated
 * cap
 
-Those were eventually rejected for the following reasons:
-
 "size" is too generic. What's the difference between a "size" and a "length"? Not really any.
 
 "reserved" sounds like something that shall be used at some point in the future, but must not be used already now.
 
-"allocated" seems appropriate if the slice has actually been dynamically allocated - but this is no longer necessarily the case using the current semantics.
+"allocated" seems appropriate if the slice has actually been dynamically allocated. It is also fitting that a slice may refer to statically allocated data if "allocated" is null.
 
 "cap" could be misinterpreted as "capped", which is not intented.
 

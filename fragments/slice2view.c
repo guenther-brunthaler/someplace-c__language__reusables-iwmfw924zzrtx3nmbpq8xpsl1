@@ -2,5 +2,5 @@
 
 extern void slice2view(slice_view *dst, slice const *src) {
    dst->start= src->start;
-   dst->length= src->length;
+   dst->active= src->active;
 }

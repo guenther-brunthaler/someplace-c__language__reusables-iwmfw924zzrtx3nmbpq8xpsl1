@@ -12,8 +12,10 @@
 #
 # By default, random UUIDs are generated for security reasons. However, the -r
 # or -t option may be specified to request random- or time+node based UUIDs.
+# It is also possible to specify an existing UUID directly (in base-35
+# lower-case form) using the -u option.
 #
-# v2023.126
+# v2024.79
 
 set -e
 trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
@@ -21,12 +23,17 @@ trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
 tabs=
 move=false
 uuidgen_opts=-r
-while getopts rtms: opt
+uu=
+while getopts rtms:u: opt
 do
 	case $opt in
 		[rt]) uuidgen_opts=-$opt;;
 		s) tabs=`expr x"$OPTARG" : x'\([1-9][0-9]*\)$'`;;
 		m) move=true;;
+		u)
+			expr x"$OPTARG" : x'[0-9a-np-z]\{25\}$' > /dev/null
+			uu=$OPTARG
+			;;
 		*) false || exit
 	esac
 done
@@ -53,23 +60,29 @@ rx_fname='filename'
 rx_contents='here'
 rx_sym='[_[:alnum:]]*INCLUDED'
 
-nsym=`
-	uuidgen $uuidgen_opts | perl -MMath::BigInt -e '
-		$a= "09ANPZ";
-		$a =~ s/(..)(?=(?:..)+$)/\1:/g;
-		$a= join "", map {
-			($a, $b)= split //, $_; $a .. $b
-		} split /:/, $a;
-		$u= <>; $u =~ s/[^[:xdigit:]]//g;
-		$u= Math::BigInt->from_hex($u);
-		$o= "";
-		for ($i= 25; $i--; ) {
-			$o= substr($a, $u % 35, 1) . $o;
-			$u/= 35;
-		};
-		print "HEADER_${o}_INCLUDED\n";
-	'
-`
+if test "$uu"
+then
+	nsym=`echo $uu | tr a-z A-Z`
+else
+	nsym=`
+		uuidgen $uuidgen_opts | perl -MMath::BigInt -e '
+			$a= "09ANPZ";
+			$a =~ s/(..)(?=(?:..)+$)/\1:/g;
+			$a= join "", map {
+				($a, $b)= split //, $_; $a .. $b
+			} split /:/, $a;
+			$u= <>; $u =~ s/[^[:xdigit:]]//g;
+			$u= Math::BigInt->from_hex($u);
+			$o= "";
+			for ($i= 25; $i--; ) {
+				$o= substr($a, $u % 35, 1) . $o;
+				$u/= 35;
+			};
+			print "$o\n" or die;
+		'
+	`
+fi
+nsym=HEADER_${nsym}_INCLUDED
 rx_UU='[0-9A-NP-Z]\{25\}'
 rx_uu='[0-9a-np-z]\{25\}'
 uu=`echo $nsym | sed "s/.*\\($rx_UU\\).*/\\1/; t; d" | tr A-Z a-z`
