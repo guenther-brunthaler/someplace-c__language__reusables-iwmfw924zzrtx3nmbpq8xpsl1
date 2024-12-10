@@ -4,7 +4,7 @@
 
 /* Set <i> to first argument after any program name and options. Only "--" is
  * supported. */
-static void no_options(int *i_ref, int argc, char *const *argv) {
+extern void no_options(int *i_ref, int argc, char *const *argv) {
    int i;
    if ((i = 0) < argc && ++i < argc) {
       if (argv[i][0] ==  '-') {

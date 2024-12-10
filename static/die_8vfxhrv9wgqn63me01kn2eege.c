@@ -3,7 +3,7 @@
 /* Requires: stdio.h-8vagj4enqe40ubxjpqrpvyr05 */
 /* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
 
-static void die(char const *format, ...) {
+extern void die(char const *format, ...) {
    {
       va_list args;
       va_start(args, format);

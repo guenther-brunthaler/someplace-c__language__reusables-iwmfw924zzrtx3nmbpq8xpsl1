@@ -11,7 +11,7 @@
  * variable which receives that assignment must also be passed as <len_ref>.
  * The function will use this value to verify that the conversions consumed all
  * of the <source> string and that no unconverted data remains at its end. */
-static void sscanf_ck(
+extern void sscanf_ck(
    int *len_ref, char const *source, char const *conversion, ...
 ) {
    va_list args;

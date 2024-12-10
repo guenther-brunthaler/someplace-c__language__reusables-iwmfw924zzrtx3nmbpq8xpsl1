@@ -3,7 +3,7 @@
 /* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
 /* Requires: write_error-8vgmhc1xta7fci46nvmjk7kf7 */
 
-static void printf_ck(char const *format, ...) {
+extern void printf_ck(char const *format, ...) {
    int rc;
    {
       va_list args;
