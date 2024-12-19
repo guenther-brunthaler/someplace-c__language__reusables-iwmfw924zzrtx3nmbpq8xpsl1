@@ -2,6 +2,7 @@
 /* Requires: stdio.h-8vagj4enqe40ubxjpqrpvyr05 */
 /* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
 /* Requires: write_error-8vgmhc1xta7fci46nvmjk7kf7 */
+/* Within-Group: linkage-sjl6kj2r9ffsr8v5hi98nret1 */
 
 extern void printf_ck(char const *format, ...) {
    int rc;

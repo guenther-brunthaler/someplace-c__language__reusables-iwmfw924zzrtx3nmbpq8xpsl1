@@ -2,6 +2,7 @@
 /* Requires: stdlib.h-p68c8i02e9jtk0r18n9hz1g3w */
 /* Requires: stdio.h-8vagj4enqe40ubxjpqrpvyr05 */
 /* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
+/* Within-Group: linkage-sjl6kj2r9ffsr8v5hi98nret1 */
 
 extern void die(char const *format, ...) {
    {

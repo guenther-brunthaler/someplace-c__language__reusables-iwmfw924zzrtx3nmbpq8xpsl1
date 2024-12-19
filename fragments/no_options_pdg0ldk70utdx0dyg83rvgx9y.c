@@ -1,6 +1,7 @@
 /* Provides: no_options-pdg0ldk70utdx0dyg83rvgx9y */
 /* Requires: string.h-8vbaylzhw8ud12b5nh8i1ztkv */
 /* Requires: die-8vfxhrv9wgqn63me01kn2eege */
+/* Within-Group: linkage-sjl6kj2r9ffsr8v5hi98nret1 */
 
 /* Set <i> to first argument after any program name and options. Only "--" is
  * supported. */

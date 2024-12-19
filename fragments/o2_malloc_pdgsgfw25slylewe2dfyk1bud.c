@@ -1,6 +1,7 @@
 /* Provides: o2_malloc-pdgsgfw25slylewe2dfyk1bud */
 /* Requires: stdlib.h-p68c8i02e9jtk0r18n9hz1g3w */
 /* Requires: die-8vfxhrv9wgqn63me01kn2eege */
+/* Within-Group: linkage-sjl6kj2r9ffsr8v5hi98nret1 */
 
 extern void *o2_malloc(size_t bytes) {
    void *p;

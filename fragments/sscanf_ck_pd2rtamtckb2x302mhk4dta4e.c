@@ -4,6 +4,7 @@
 /* Requires: stdarg.h-8vc3k18lhrgxrla08gacsd4w1 */
 /* Requires: assert.h-8vdn7fihgdlw3y9ap6a5tvqlu */
 /* Requires: die-8vfxhrv9wgqn63me01kn2eege */
+/* Within-Group: linkage-sjl6kj2r9ffsr8v5hi98nret1 */
 
 /* sscanf() with error checking.
  *
