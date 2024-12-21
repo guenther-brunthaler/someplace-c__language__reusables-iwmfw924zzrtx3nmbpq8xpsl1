@@ -1,6 +1,6 @@
 Handling of buffers with different allocation properties
 ========================================================
-v2024.332
+v2024.356
 
 This document is part of the 'R4G' (Resource control framework, 4th generation) project.
 
@@ -62,7 +62,7 @@ In R4G, the semantics of `start` is:
 
 * If it is null, then the slice is "inactive". It exists, but no memory block is currently associated with it. This makes the slice not invalid, but accessing the referenced memory is obviously not allowed.
 
-* `start` is not normally null-terminated. While it can be, the functions dealing with slices do not assume or ensure this. Null-termination is frequently required for passing strings to C library functions, but in this case special slice-functions need to be called which will add such a null terminator explicitly.
+* `start` is not automatically null-terminated. While it can be, the functions dealing with slices do not assume or ensure this. Null-termination is frequently required for passing strings to C library functions, but in this case `append0()` need to be called which will add such a null-terminator explicitly.
 
 * If `start` is null, then both `active` and `allocated` must also be null.
 
@@ -72,9 +72,9 @@ In R4G, the semantics of `start` is:
 active
 ------
 
-This is the "logical" length of the allocated buffer. In case of a text string, this represents the number of actual characters in the represented text. It does *not* include the null terminator, even if one is actually present. The idea is to ensure assert(strlen(start) == active) in the case of C strings.
+This is the "logical" length of the allocated buffer. In case of a text buffer, this represents the number of actual characters in the represented text. In case of a C string, it *does* include the null terminator. The idea is to ensure `assert(strlen(start) == active - 1)` in the case of C strings.
 
-The function slice0t() for null-terminating a slice will write the null-terminator after the portion of the buffer indicated by `active`, but of course still inside its `allocated`.
+The function `append0()` for null-terminating a slice will append the null-terminator to the slice, growing it if necessary.
 
 `active` refers to the currently "usable" part of the buffer. This means that part of the buffer either contains actually valid data, or it contains undefined bytes which are expected to be overwritten by new data to be stored there. It can be enlarged up to the value represented by `allocated` without a need to reallocate the buffer. However, it is possible that `allocated` is zero, which is a special case and does not mean the buffer is invalid. In this case, `active` can only be shrunk, but must not be grown beyond its original value.
 
@@ -89,7 +89,7 @@ The following names for the identifier have been considered (or were used on ear
 
 "active" has the advantage over "usable" or "length" in that it suggests validity for general usage without also implying validity of the data currently stored there. In particular, the "active" portion of a buffer may be ready to receive new data, even if that data has not been "used" yet because it is still uninitialized.
 
-"size" is too generic. It also raises questions whether the null terminator is included in case of C strings or not. It is better to use "len" or "length" instead, at least for C strings, because of the connotation with the `strlen()` function, which also does not include the null byte in its result.
+"size" is too generic. It also raises questions whether the null terminator is included in case of C strings or not.
 
 "used" infers that the buffer already has some previous history of *usage*. This must not be the case. A newly allocated buffer might be *usable*, but it is not yet *used*.
 
@@ -109,17 +109,17 @@ The latter means that this slice does not represent a complete allocated buffer,
 
 Alternatively, it can mean that it refers to a statically allocated object, or even an `auto`-variable on the stack, rather than to something dynamically allocated.
 
-In other words, a `allocated` of zero states that this slice cannot be deallocated or grown.
+In other words, an `allocated` which is zero states that this slice cannot be deallocated or grown.
 
 Neither can a null-terminator be added to it, except if there is some appropriate position within the current `active` where to put it. (This will actually split the buffer into a C string prefix and an unused buffer suffix which will be ignored by readers of the C string.)
 
 It is permissible for such a slice to move `start` or reduce the value of `active`, but the new effective settings of the slice must be within the bounds of the old slice.
 
-If `allocated` is not null, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.
+If `allocated` is not zero, it guarantees that this slice represents the whole buffer, and can be reallocated or deallocated using functions like malloc/realloc.
 
 Actually, it does not have to be malloc/realloc at all - but it must always be the same set of allocation functions, which is easy to achieve because allocation, reallocation and deallocation are all handled by the same function. (At least as of now in the R4G framework.)
 
-If `allocated` is null, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.
+If `allocated` is zero, the slice should also be considered read-only in most cases, because it usually means that we see just a window into a larger buffer which is shared with someone else. And we do not generally know if those other ones like it if we change something in the buffer. Of course, this is not a problem if the caller explicitly entitled us to do so.
 
 These semantics have the advantage that slices can be used for writable static char arrays as well as dynamically allocated strings.
 
@@ -134,7 +134,7 @@ The following names for the identifier have been considered (or were used on ear
 
 "reserved" sounds like something that shall be used at some point in the future, but must not be used already now.
 
-"allocated" seems appropriate if the slice has actually been dynamically allocated. It is also fitting that a slice may refer to statically allocated data if "allocated" is null.
+"allocated" seems appropriate if the slice has actually been dynamically allocated. It is also fitting that a slice may refer to statically allocated data if "allocated" is zero.
 
 "cap" could be misinterpreted as "capped", which is not intented.
 

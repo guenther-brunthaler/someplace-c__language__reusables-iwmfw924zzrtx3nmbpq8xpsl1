@@ -43,8 +43,9 @@ void slice2view(slice_view *dst, slice const *src);
 
 /* Appends '\0' to the current <active> buffer portion in order to establish
  * (<active> - 1) == strlen(<start>). This will convert non-terminated text
- * contents of previous size <active> into a C string. Returns the new <start>
- * in case the buffer had to be reallocated, otherwise the unchanged one. */
+ * contents of previous size <active> into a C string. Must not be called if
+ * the buffer is already null-terminated. Returns the new <start> in case the
+ * buffer had to be reallocated, otherwise the unchanged one. */
 char *append0(slice *text);
 
 /* Reallocate the slice. <minimum_new_size> must be larger than its current
