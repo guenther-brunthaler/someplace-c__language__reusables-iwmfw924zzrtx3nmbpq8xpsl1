@@ -1,7 +1,7 @@
 /*
  * #include <slice_u2e1pat7kfdmqk54z49ghgd0y.h>
  *
- * Version 2024.332
+ * Version 2024.355
  * Copyright (c) 2022-2024 Guenther Brunthaler. All rights reserved.
  *
  * This script is free software.
@@ -18,12 +18,13 @@
 /* Describes a writable portion of a memory area. Frequently but not
  * necessarily dynamically allocated. Can also be a "window" into a larger
  * object. Primarily meant to represent binary bytes, but also works for text.
- * The '\0' terminator of C strings is normally put within "allocated" right
- * after "active", so that "active" == strlen(start). */
+ * For text that is a C string, the '\0' terminator must be the last byte of
+ * the <active> section of the buffer, so that (<active> - 1) ==
+ * strlen(<start>). */
 typedef struct {
    char *start; /* If NULL then yet unallocated buffer. */
-   size_t active; /* Must be <= allocated but only if allocated != 0. */
-   size_t allocated; /* If non-zero or start == NULL: Slice is resizable. */
+   size_t active; /* Must be <= <allocated> but only if <allocated> != 0. */
+   size_t allocated; /* If non-zero or <start> == NULL: Slice is resizable. */
 } slice;
 
 /* Describes a read-only portion of a memory area. Frequently but not
@@ -31,8 +32,8 @@ typedef struct {
  * object. Primarily meant to represent binary bytes, but also works for
  * text. */
 typedef struct {
-   char const *start; /* Null only if active is also 0. */
-   size_t active; /* Does *not* include the '\0' if it is a C string. */
+   char const *start; /* Null only if <active> is also 0. */
+   size_t active; /* Includes the '\0' if <start> is a C string. */
 } slice_view;
 
 /* Converts a writable slice into a read-only slice_view. Only the latter ones
@@ -40,9 +41,11 @@ typedef struct {
  * in general). */
 void slice2view(slice_view *dst, slice const *src);
 
-/* Writes '\0' right after the "active" portion of the buffer. Returns the new
- * "start" in case the buffer had to be grown, otherwise the unchanged one. */
-char *slice0t(slice *text);
+/* Appends '\0' to the current <active> buffer portion in order to establish
+ * (<active> - 1) == strlen(<start>). This will convert non-terminated text
+ * contents of previous size <active> into a C string. Returns the new <start>
+ * in case the buffer had to be reallocated, otherwise the unchanged one. */
+char *append0(slice *text);
 
 /* Reallocate the slice. <minimum_new_size> must be larger than its current
  * <allocated> size and also larger than its currently <active> size. The
