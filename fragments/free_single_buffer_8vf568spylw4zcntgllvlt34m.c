@@ -4,7 +4,7 @@
 
 #ifdef extern
 static
-#fi
+#endif
 void *all_dynamically_allocated_resources;
 
 extern void free_all_resources(void) {
