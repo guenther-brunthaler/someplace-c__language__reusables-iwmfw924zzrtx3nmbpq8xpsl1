@@ -1,0 +1,59 @@
+Failed Ideas
+============
+v2025.162
+
+This document provides a discussion of ideas and implementation approaches used by earlier iterations of the current resource management framework.
+
+It sorts the ideas by approximate time of rejection, more recent ideas first.
+
+
+String list for error messages
+------------------------------
+
+In previous implementations, there has only been a single error string which was a constant "C" string literal.
+
+In this new approach, I defined the thread-global resource context as follows:
+
+extern struct {
+   resource *rlist; /* List of currently allocated resources. */
+   /* Dynamically-allocated full-fledged error messages.
+    * Newer messages occur later in the list. */
+   struct {
+      struct cstr_list_node *oldest; /* NULL or oldest message. */
+      /* Address of NULL pointer terminating the list. */
+      struct cstr_list_node **append;
+   } error_messages;
+   /* NULL or statically-allocated newest error message.
+    * Used as a fallback if there was an error allocating and formatting
+    * the full-fledged version of this error message. */
+   char const *fallback_error_message;
+   /* Unhandled error count. N >= 0: Exactly N. -N: (-N) or more. */
+   int errors;
+} resources;
+
+struct cstr_list_node {
+   cstr_list_node *younger; /* Next */
+   char *cstr; /* Null terminated dynamically-allocated string. */
+};
+
+The idea was that when creating a new error, `errors` as set to 1 and a statically allocated constant "C" character string was assigned to `fallback_error_message` as a provosional error message by calling prepare_error(preliminary_message).
+
+Then a better error message might be formatted into a dynamically allocated buffer and passed to raise_error(final_message). Alternatively, raise_error(NULL) would re-use the preliminary message, making it also the final message.
+
+In both cases, the effective final message would be copied into a new dynamically allocated C string, and then appended to the `resources.error_messages` list as shown above.
+
+However, this showed to be to cause too much work for both raise_error() and the error display function.
+
+raise_error() had to deal with the possibility of memory allocation failures when making copies of the final error message or allocating new list nodes.
+
+And the error display routine had to take measures that the same error messages are not displayed multiple times in case there was an error displaying some of the error messages in the list after an initial subset of the messages has already been displayed successfully.
+
+I therefore dropped this idea. Having a list of paragraphs is not worth the hassle of dealing with a linked list of dynamically allocated list nodes and string buffers.
+
+Pretty much the same could be achieved by only keeping around a single dynamically-allocated string buffer, which contains multiple paragraphs of text separated by empty lines.
+
+Keeping such a dynamically allocated "better" error message around in addition to a statically allocated error message as a fallback has been an idea for quite a long time, but has never actually been implemented because of the complications of dealing with two different kinds of error message at the same time.
+
+But I realized this old idea was still a better solution than the new one with a list of strings.
+
+The newer approach had the same basic problems like the two-messages idea, but multiplied that problems with the fact that there are now many strings for which to manage their dynamic lifetime.

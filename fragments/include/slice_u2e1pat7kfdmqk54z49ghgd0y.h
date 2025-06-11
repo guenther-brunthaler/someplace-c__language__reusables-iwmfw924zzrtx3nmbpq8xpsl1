@@ -1,8 +1,8 @@
 /*
  * #include <slice_u2e1pat7kfdmqk54z49ghgd0y.h>
  *
- * Version 2024.355
- * Copyright (c) 2022-2024 Guenther Brunthaler. All rights reserved.
+ * Version 2025.162
+ * Copyright (c) 2022-2025 Guenther Brunthaler. All rights reserved.
  *
  * This script is free software.
  * Distribution is permitted under the terms of the GPLv3.
@@ -24,7 +24,7 @@
 typedef struct {
    char *start; /* If NULL then yet unallocated buffer. */
    size_t active; /* Must be <= <allocated> but only if <allocated> != 0. */
-   size_t allocated; /* If non-zero or <start> == NULL: Slice is resizable. */
+   size_t allocated; /* If != 0 or <start> == NULL: Slice is reallocatable. */
 } slice;
 
 /* Describes a read-only portion of a memory area. Frequently but not
