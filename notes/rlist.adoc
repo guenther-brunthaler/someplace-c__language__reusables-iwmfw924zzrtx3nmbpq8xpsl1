@@ -1,0 +1,86 @@
+R4G Resource Lists
+==================
+Guenther Brunthaler
+v2025.216
+
+
+R4G is the 'Resource Control Framework for C, 4th Generation'.
+
+The primary purpose of R4G is to add a framework for resource manangement and error handling to C, which provides the same basic features as destructors and exceptions do for C++.
+
+Its most important and basic data structure is the "resource":
+
+----
+typedef struct resource resource;
+struct resource {
+   union {
+      void *ivars;
+      int si;
+      long *sl;
+      unsigned long *ul;
+   } u;
+   resource *link;
+   void (*action)(resource **rlist);
+};
+
+extern resource *rlist;
+----
+
+Linked instances of `resource` represent the 'resource list' as a singly-linked list (terminated by a `NULL` link pointer).
+
+The global `rlist` points to the first member of the resource list, which is the most recently added resource.
+
+The idea is that the resource lists represents a linked list of "destructors" as C++ would call it.
+
+When the framework allocates a resource which needs to be deallocated later, it adds a `resource` entry to the resource list with the `action` member of the resource set to the destructor function.
+
+The `action` callback receives the address of `rlist` and allows to manipulate it; in particular this allows the callback to unlink the resource from the resource list without needing to reference the global `rlist` variable directly.
+
+Accessing `rlist` directly might be an expensive operation, because it might be a macro for obtaining the actual pointer, or a thread-local variable which is more expensive to access than a normal variable.
+
+The `rlist`-argument passed to the `action` callback also allows the callback to locate its own resource, which will always be the head of the resource list at the time the callback is invoked.
+
+Unlike C++ which invoked destructors automatically at the right time, the R4G framework required code to manually invoke the `release_until()` function when a resource scope is left.
+
+This function does nothing else than call the `action` callback of the resource at the head of the resource list repeatedly until the list head happens to be the same as the passed pointer argument. Then the loop exits and `release_until()` returns.
+
+The `action` callback is therefore required not just to deallocate its resource, but also to unlink its `resource` struct from the resource list before returning.
+
+If the `resource` structure is dynamically allocated, the `action` callback must also deallocate this structure before returning.
+
+The `u` member of the `resource` structure provides resource-spefific additional context information to the callback.
+
+Typically the union member `u.ivars` points to a struct which represents the instance variables of an object to be destroyed.
+
+If this is the case and if the struct which contains the instance variables has been dynamically allocated, then the callback must deallocate this structure as well as part of its duties.
+
+Like a C++ destructor, an `action` callback does not neccessarily have to destroy anything. It can also just perform any other kind of action.
+
+Here is a list of some things the `action` callback might also do:
+
+* Exit the current program with a particular exit code.
++
+By default, if an error occurs, all resources in the resource list are released and then the process terminates with EXIT_FAILURE. Sometimes this is not good enough and a specific exit result code shall be returned. In this case the very first (initially; later it becomes the very last) resource in the resource list can call exit() with the desired return code after performing its usual duties (unlinking itself from the resource list, deallocating the `resource` structure if necessary).
+
+* Display the current error message if an error condition exists.
++
+--
+This is more flexible than a rigid system of when and how error messages are displayed. Error creation is completely separate from displaying the created error messages.
+--
+
+* Perform some "`finally`" action like JAVA provides them.
+
+* Emulate "`catch`" of C++ by using `longjmp()` to jump out of the callback, back into the main program, to the place where
+"`setjmp()`" was called. This allows "resuming" the main program after "recovering" from an error.
+
+* Display some diagnostic messages.
+
+* Rollback or commit transactions.
++
+Resources may be transational. In this case the callback needs to determine whether it has been invoked by the normal flow of control or during resource "unwinding" due to an error. In the first case it shall "commit" the transaction represented by the resource. In the second case it shall "rollback" the transaction.
+
+* Allocate even more resources
++
+There is no obligation of an action callback to remove its own resource from the resource list. It may instead choose to allocate additional resources and add them to the resource list. Such resources might be required to actually destroy a resource. For instance, new iterator objects might be required to enumerate all items of a collection in order to release all collection items before releasing the collection object itself. Of course, an action callback should only allocate temporary new resources. Eventually all those new resources and the resource of the callback itself should be released and unlinked from the resource list. In other words, adding resources by an action callback must not lead to a situation where the resource list grows endlessly rather than being shrunk. The resource list is rather allowed to grow temporarily with the overall goal of shrinking it eventually.
+
+The `resource`

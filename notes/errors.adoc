@@ -1,0 +1,14 @@
+R4G Error Handling
+==================
+Guenther Brunthaler
+v2025.220
+
+R4G is the 'Resource Control Framework for C, 4th Generation'.
+
+The primary purpose of R4G is to add a framework for resource manangement and error handling to C, which provides the same basic features as destructors and exceptions do for C++.
+
+R4G does not display error messages by itself. It just composes and stores error messages at a known place. When the resource list is "unwinding" due to an error, an action callback should be added to the resource list which displays the error message in a way appropriate for the current application. For instance, a GUI application might show the error message in message window. A command line application might write it to the standard error stream.
+
+More than one action callback can display the same error message. For instance, in addition to showing it to the user in some way, another callback might append the error message to some log file. A third callback might send it to the syslog.
+
+Or there is no callback at all for displaying the error message. Error messages are for humans. Sometimes when a helper program is supposed to be called by other programs only, error messages are unnecessary. In this case it might suffice if the program signals success or failure via its exit result code.
