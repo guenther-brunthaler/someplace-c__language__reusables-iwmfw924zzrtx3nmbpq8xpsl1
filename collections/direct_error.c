@@ -53,13 +53,14 @@ static resource **get_rlist(void) {
    return &rlist;
 }
 
-/* Get a handle for release_trk() to only release resources new than now. */
-static resource *mark_trk(void) {
+/* Get a handle for release_tracked_until() to only release resources new than
+\* now. */
+static resource *mark_tracked(void) {
    return *get_rlist();
 }
 
 /* Pass NULL in order to release all resources. */
-static void release_trk(resource *stop) {
+static void release_tracked_until(resource *stop) {
    resource **rlist = get_rlist();
    while (*rlist != stop) (*(*rlist)->action)(rlist);
 }
@@ -71,7 +72,7 @@ static void die(char const *emsg) {
    } else {
       perror(emsg);
    }
-   release_trk(NULL);
+   release_tracked_until(NULL);
    exit(EXIT_FAILURE);
 }
 
@@ -106,7 +107,7 @@ static void slice_dtor(void) {
    rlist = sr->tracker.link; free(sr);
 }
 
-static slice *slice_alloc_trk(void) {
+static slice *new_tracked_slice(void) {
    struct slice_rsrc *r = malloc_ck(sizeof *r);
    r->obj.start = NULL; r->obj.allocated = r->obj.active = 0;
    r->tracker.ivars = r; r->tracker.action = &slice_dtor;
