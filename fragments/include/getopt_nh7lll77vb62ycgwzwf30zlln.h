@@ -1,5 +1,4 @@
-/*
- * #include <getopt_nh7lll77vb62ycgwzwf30zlln.h>
+/* #include <getopt_nh7lll77vb62ycgwzwf30zlln.h>
  *
  * Option parsing support. Similar to getopt() and friends, but implemented
  * here in local project, and will therefore be always available (getopt is
@@ -7,13 +6,11 @@
  * cannot do everything that getopt() can do, but has a much smaller code
  * footprint and is often still sufficient.
  *
- * Version 2019.83
- *
- * Copyright (c) 2016-2019 Guenther Brunthaler. All rights reserved.
+ * Version 2025.251
+ * Copyright (c) 2016-2025 Guenther Brunthaler. All rights reserved.
  * 
  * This source file is free software.
- * Distribution is permitted under the terms of the LGPLv3.
- */
+\* Distribution is permitted under the terms of the LGPLv3. */
 
 
 #ifndef HEADER_NH7LLL77VB62YCGWZWF30ZLLN_INCLUDED
@@ -33,7 +30,7 @@
  * Option switch clustering and "--" are supported. An argument "-" will not
  * be mis-interpreted as an option. Options will only be recognized before
  * normal arguments! The usage of this function is more portable than
- * getopt(), because the latter function is not part of the C standard. */
+\* getopt(), because the latter function is not part of the C standard. */
 int getopt_simplest(
    int *optind_ref, int *optpos_ref, int argc, char **argv
 );
@@ -42,7 +39,7 @@ int getopt_simplest(
  * argument "value" for some option "-k" can be specified on the command line
  * in two ways: "-kvalue" or "-k value". The first form is only possible if
  * the argument is not an empty string. Returns a pointer to the argument or
- * null if the argument is missing. */
+\* NULL if the argument is missing. */
 char const *getopt_simplest_mand_arg(
    int *optind_ref, int *optpos_ref, int argc, char **argv
 );
@@ -52,7 +49,7 @@ char const *getopt_simplest_mand_arg(
  * as: "-kvalue" but not as "-k value". "-k" alone means the optional value
  * has been left out. The optional value cannot be an empty string; this would
  * be interpreted as a missing value. Returns a pointer to the optional
- * argument value or null if it has not been provided. */
+\* argument value or NULL if it has not been provided. */
 char const *getopt_simplest_opt_arg(
    int *optind_ref, int *optpos_ref, int argc, char **argv
 );
@@ -60,13 +57,13 @@ char const *getopt_simplest_opt_arg(
 /* Write an error message complaining about an unsupported option to the
  * standard error stream and ignore any output error. Use this if
  * getopt_simplest() returned an option character which is not supported by
- * the application. */
+\* the application. */
 void getopt_simplest_perror_opt(int bad_option_char);
 
 /* Write an error message complaining about a missing mandatory argument for
  * the encountered option <option_char> to the standard error stream and
  * ignore any output error. Use this if getopt_simplest_mand_arg() returned
- * null. */
+\* NULL. */
 void getopt_simplest_perror_missing_arg(int option_char);
 
 
