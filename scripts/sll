@@ -1,0 +1,493 @@
+#! /bin/sh
+exit_version() {
+	wr << '======='; exit
+Version 2025.260
+Copyright (c) 2025 Guenther Brunthaler. All rights reserved.
+
+This script is free software.
+Distribution is permitted under the terms of the GPLv3.
+=======
+}
+
+exit_help() {
+	wr << ======= | sed 's/^|//'; echo; exit_version
+$APP - Source-Level linker
+
+$APP parses source files and extracts named sections from them into a library
+ or replaces such sections with their newest version from the library.
+
+Sections must be ranges of whole lines. They will be referred to as "snippets"
+ from this point on.
+
+Snippets are identified by "Provides:"-directives. Snippet directives are
+ normally embedded in comments, but $APP also supports plain directives which
+ are not embedded into comments.
+
+$APP currently supports the following comment styles:
+
+# one line
+
+// one line
+
+/* one comment line, not nested */
+
+# multiple
+# comment
+# lines
+
+// multiple
+// comment
+// lines
+
+|/* multiple
+| * comment
+| * lines,
+| * not nested */
+
+|/* multiple
+| * comment
+| * lines,
+|\* not nested */
+
+Whether snippet directives are wrapped inside comments or not, they must look
+ like one of these:
+
+Provides: human_name "cj6qp081ng6u4u86d1i3iq9w5" v2025.260
+Provides: human_name v2025.260
+Provides: human_name
+Implements: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+Implements: human_name
+Implements: "cj6qp081ng6u4u86d1i3iq9w5"
+Requires: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+Requires: "cj6qp081ng6u4u86d1i3iq9w5"
+Requires: human_name
+After-Any: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+After-Any: "cj6qp081ng6u4u86d1i3iq9w5"
+After-Any: human_name
+Required-By: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+Required-By: "cj6qp081ng6u4u86d1i3iq9w5"
+Required-By: human_name
+Before-Any: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+Before-Any: "cj6qp081ng6u4u86d1i3iq9w5"
+Before-Any: human_name
+In-Group: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+In-Group: human_name
+In-Group: "cj6qp081ng6u4u86d1i3iq9w5"
+Provided: above
+Ignore-Until: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+Continue: human_name "cj6qp081ng6u4u86d1i3iq9w5"
+
+In the above examples, "cj6qp081ng6u4u86d1i3iq9w5" can be any base-35 encoded
+ DCE UUID enclosed between double quotes.
+
+There exists a script "base35uuid" which can be used to generate such UUIDs or
+ convert them between base-35 and regular hexadecimal format. For instance,
+ the base-35 UUID shown in the example above is the same as
+ "{6BCCE6B4-93BA-11F0-B225-DCA632491A1D}" in GUID-format.
+
+The base-35 encoded format expected by $APP must always match the extended
+ RegEx "^[0-9a-np-z]{25}\$" or it will not be recognized as a UUID.
+
+"human_name" on the other hand is an arbitrary user-provided string which will
+ be associated with the UUID. "human_name" can be any non-empty string of
+ printable ASCII characters not containing any whitespace characters or double
+ quote characters. The "human_name" is entirely optional. It is perfectly OK
+ to provide a UUID alone.
+
+The directive variants containing human_name but no UUID are actually
+ instructions to generate a new UUID and replace the directive with the
+ variant that contains the new UUID.
+
+The "v2025.260" is a revision identifier. It is used by $APP to determine
+ which variant of a snippet is newer: The current version in the source file
+ or the current version in the library.
+
+A version identifier consists of "v" followed by an arbitrary number (but at
+ least one) of version components separated by "." characters. The components
+ must be unsigned integers and will be compared numerically, i.e. not as
+ strings (not lexicographically).
+
+When the "Provides:" directive is specified without a version identifier, it
+ is actually an instruction to generate a new version identifier and replace
+ the directive by a variant which includes the new version identifier. Version
+ identifiers generated that way are based on the current UTC time. The year
+ number is used as the first version component and the day number within the
+ year as the second version component.
+
+A snippet must always start with a "Provides:" directive. Within the snippet,
+ more directives may follow, but no further "Provides:" directives are
+ allowed.
+
+Normally one snippets extends until the next "Provides:"-directive is found.
+ Any trailing empty lines before the start of the next snippet are kept and
+ belong to the current snippet. It is quite usual that snippets contain one or
+ more empty lines at their end.
+
+However, sometimes a snippet is followed by text that is not another snippet
+ but rather ordinary text. In this case the "Provided: above" directive can be
+ used in order to terminate a snippet explicitly. This line is not considered
+ to be part of the snippet, but neither does it start a new snippet. The line
+ will not be removed either when replacing snippets.
+
+Except for the fact that it must start with a "Provides:"-directive, there is
+ no required order between the types or location of directives within a
+ snippet.
+
+"Provides:"-directives assign a unique name to snippets. Only a single snippet
+ with the same "Provides:" UUID can exist in the library.
+
+"Implements:"-directives are similar to "Provides:". They add alias UUIDs and
+ associated user-provided names to a snippet. They allow to implement
+ different variants (which have different "Provides:" UUIDs) of the same
+ snippet. Consider those variants to be implementation of "virtual" methods
+ like in C++.
+
+The "Required:" directive declares that the current snippet must be preceded
+ by the snippet with the UUID mentioned in the directive. This does not mean
+ it must be *immediately* preceded by the other snippet. It just means that
+ the other snippet must be placed somewhere before all the snippets which
+ declare it as "Required:" or "After-Any:". It will work for either
+ "Provides:" UUIDs or "Implements:" UUIDs. The user-provided name will be
+ ignored for matching unless no UUID has been specified. In this case, the
+ user-provided name will be used for looking up the UUID from the library or
+ from the same source file (or if that also fails, by auto-generating a new
+ UUID). Missing snippets declared by "Required:"-directives will be inserted
+ into the source file from the library if they can be found there. In this
+ case, the snippets will be inserted as close to the end of the source file as
+ the declared dependencies allow.
+
+The "Required-By:" directive declares that the current snippet must be
+ followed rather than being preceded by the snippet with the UUID mentioned in
+ the directive. It is basically a symmetric variant of "Required:" which works
+ into the opposite direction.
+
+The "After-Any:" directive is the same as "Required:" except that it does not
+ actually represent a requirement to include the snippet. It works the same as
+ "Required:" in case the snippet is "Required:" somewhere else. But if this is
+ not the case, the snippet will not be inserted.
+
+The "Before-Any:" directive is the symmetric variant of "After-Any". It does
+ the same as "Required-By:" except that it will not cause inclusion of the
+ snippet by itself.
+
+The "In-Group:" directive logically associates a snippet with one or more
+ groups. Groups are named by UUIDs, but have associated user-provided names
+ for looking up the UUID in case none has been provided. Groups are used to
+ define sections of snippets which shall be kept together inside a source
+ file. Actually, every "Provides:" directive actually synthesizes an
+ "In-Group" directive of the same name and UUID. Groups do not be declared;
+ they spring into existence as soon as a group is mentioned in an "In-Group:"
+ directive. It is possible to use the same UUID in both a "Required:" and
+ "In-Group:" directives for the same snippet. This has then the accumulative
+ effect that the snippet shall be kept together with the other members of the
+ same group, but must be placed after all "Required:" snippets within the
+ group.
+
+The "Provided:" directive explicitly terminates a snippet. There is a single
+ required parameter, which is the literal string "above". No other parameters
+ are allowed.
+
+The "Ignore-Until:" directive specifies an optional user-provided name and a
+ UUID. It works similar to "Required-By:", except that the UUID does not refer
+ to a snippet but rather to a "Continue:"-directive. The parser will then stop
+ scanning for any other directives until the first "Continue:" directive is
+ encountered which specifies the same UUID. The user-provided name, if any, is
+ only processed locally. It will not be looked up from the library if it is
+ missing, nor will it be saved to the library via the "-a" command. It does
+ not need to be unique like the UUID and can thus be a string like "--------".
+ It is not an error to specify the UUID of a "Continue:" directive which does
+ not exist. In this case, the rest of the source file will be skipped when
+ scanning for all directives.
+
+The "Continue:" directive specifies the first line where to resume parsing for
+ all directives, after an earlier "Ignore-Until:" directive stopped parsing
+ for directives other than "Continue:" with a matching UUID. The user-provided
+ name (if any) is ignored. However, the "-e" command will replace the
+ user-provided string in a "Ignore-Until:" directive by the user-provided
+ string found (including none) in its associated "Continue:" directive. Such
+ replacement will however only occur in such directives which are not skipped
+ themselves by a surrounding "Ignore-Until:" / "Continue:" pair of directives.
+ It is an error if a "Continue:" directive (which was not skipped by the
+ parser) specifies a UUID for which an "Ignore-Until:" directive has not been
+ parsed earlier.
+
+Directives can also appear outside a snippet. This can be used to declare
+ dependencies for the main program which is not part of any snippet. Usually
+ such directives are placed after a "Provided: above" directive. Because
+ otherwise, after the "Required:" snippets have been inserted into the source
+ file, it would look like as if the text after the last inserted snippet
+ belongs to the snippet.
+
+The "library" is a per-user directory which is an application-defined
+ subdirectory of the base directory specified by environment variable
+ \$XDG_DATA_HOME.
+
+If this variable is not set, the base directory defaults to
+ "\$HOME/.local/share".
+
+The library directory will be automatically created if it does not already
+ exist. It contains files as well as symlinks.
+
+The following entries are stored in the library directory for every snippet:
+
+* File "FORMAT-MAJOR-VERSION": Contains a revision identifier in the format
+ \$YEAR.\$YDAY which specifies the earliest version if $APP that can correctly
+ understand the contents of the library directory.
+
+* File \$HASH-\$ALGO: The source code of the snippet. \$HASH as part of the
+ name is a cryptographic hash of the file contents. \$ALGO is is a numeric
+ identifier of the hash algorithm. The current version of $APP used "0".
+ Future versions may use different hash algorithms and different associated
+ numeric identifiers.
+
+* File \$HASH-\$ALGO.version: The version identifier parsed from the
+ "Provides:"-directive of the snippet minus the leading "v".
+
+* File \$HASH-\$ALGO.origin: The basename of the source file from which this
+ snippet was extracted from, prefixed by artificial path components. Those
+ components are: A pathname-independent identifier of the filesystem
+ containing the source file (prefixed by a numeric identifier-derivation
+ algorithm ID plus ":"), the ctime of the source file and its i-node number.
+ As long as the directory containing the original file is not deleted, the
+ provided information should suffice in identifying it without explicitly
+ storing the path name which can be considered private depending on the
+ context. If an operating system does not provide any kind of persistent
+ filesystem identification, then the identifier-derivation algorithm shall use
+ the UNIX timestamps of the birth time (if available) or mtime (otherwise) of
+ the top-level directory of the filesystem (its mount point when mounted) as a
+ fallback for the filesystem identification. Even though the mtime of a file
+ system's top-level directory may not be a very reliable persistent identifier
+ for a file system, in many cases the contents of the top-level directory
+ rarely change because it only contains subdirectories where new files are
+ stored or modified.
+
+* A relative symbolic link from the snippet's UUID pointing to the file
+ "\$HASH-\$ALGO" which stores the source code.
+
+Besides the mentioned files, symlinks to to the \$UUID files exist in the
+ library directory. The symlinks have the same names as the user-provided
+ names associated with the snippet UUIDs. If the source file from which a
+ snippet got extracted had a filename extension, then a second symlink is
+ created also, which is named after the user-provided name plus the filename
+ extension. So, if the user-provided name of a snippet is "foo" and it got
+ extracted from a file "foobar.c", then a symlink named "foo" and a second one
+ named "foo.c" will be created, both pointing to the file containing the
+ snippet source code. This allows to use the same user-provided name for a
+ snippet in different contexts. For instance, a "C" version and a shell
+ version of the same name.
+
+The only files stored there are snippets. Every snippet is stored in its own
+ file. The filename is a hash of the snippet's contents.
+
+Supported options:
+
+-a: Add to library. The remaining parameters of the command are file names to
+ be scanned for "Provides:"-directives that start source code snippets and
+ specify a UUID. Such snippets will be extracted and placed into the library.
+ Dependencies will not be considered. If a different version of the snippet
+ already exists in the library, it will be replaced if the extracted snippet
+ has a higher version number. If both the extracted and the library snippet
+ are different but specify the same version number, an error message will be
+ displayed, this snippet will not be processed and $APP will eventually
+ terminate with a return code indicating failure. Further snippets will still
+ be processed, though.
+
+-u: Update from library. The remaining parameters of the command are file
+ names to be scanned for "Provides:"-directives that start source code
+ snippets and specify a UUID. For every snippet encountered it will be checked
+ whether the library contains a newer version of that snippet, determined by
+ comparing the version numbers. If the library version is newer, the older
+ version in the source file will be replaced by the library version.
+ Dependencies will not be considered. If both the snippet found in the source
+ file and the snippet from the library snippet are different but specify the
+ same version number, an error message will be displayed, this snippet will
+ not be processed and $APP will eventually terminate with a return code
+ indicating failure. Further snippets will be processed, though.
+
+-e: Expand user-provided names by associating them with UUIDs. Or add new
+ UUIDs to "Provides:" directives which provide neither user-provided names nor
+ UUIDs. This is a convenience command which allows the user to provide new
+ snippets or specify dependencies using user-provided names only. Then run
+ this command, and it will add the UUIDs where they are missing. The command
+ scans the specified source files for directives and extracts their
+ user-provided names (if any) and associated UUIDs. If a user-provided name is
+ not associated with a UUID in any of the source files, the command tries to
+ look up the UUIDs from the user-provided name symlinks in the library. If
+ this does not help either, new UUIDs are created for all user-provided names
+ missing still one. Then, in a second pass over all the source files, add the
+ UUIDs to all directives without a UUID. In addition to inserting missing
+ UUIDs, this command will also add revision identifiers to
+ "Provides:"-directives missing one. Newly constructed revision identifiers
+ will reflect the current mtime of the source file containing the snippet
+ (before modification by this command), reduced to the granularity of whole
+ days.
+
+-d: Remove local library copies. Removes all snippets from the current source
+ file which are identical to (same contents) or older (determined by comparing
+ the version identifiers) than the library versions of the snippets.
+ Dependencies will not be considered. It is recommended to do this as a
+ preparation for "-r" in order to get rid of unnecessary dependencies.
+
+-r: Resolve and sort dependencies. Process all specified source files in
+ sequence. For each file, scan it for directives and abort with an error
+ message if a directive without specified UUID is found. Then evaluate the
+ specified dependencies in order to calculate the order in which the snippets
+ should occur in the source file. If "Required:"-directives are found where
+ the specified snippet cannot be found in the current source file, fetch the
+ missing source code from the library or, if not found there either,
+ synthesize a snippet from scratch containing only a "Provides:"-directive
+ with a followed by an empty line. In the case where the declared dependencies
+ does not restrict the possible order for a set of snippets, sort them
+ lexicographically by their UUID. Note that "-r" will not remove unnecessary
+ dependencies; it will only add missing ones and then sort all snippets
+ currently present in a source file. In order to get rid of unnecessary
+ dependencies, run a "-d" operation first.
+
+-o: Consider the remaining parameters of the command line to be pathnames of
+ files and display the same absolute pathnames with "anonymized" directory
+ prefix for them, as they would be stored in the "\$HASH-\$ALGO.origin" files
+ in the library explained above.
+
+-H: Consider the remaining parameters of the command line to be pathnames of
+ files and display the hashes for all the files, using the same format as the
+ filenames "\$HASH-\$ALGO" in the library as explained above.
+=======
+}
+APP=${0##*/}
+APP_UUID=ka5r5hs98k4giz34j97xn0j5l
+
+# Provides: #simple_error "h94h0wbejqap5f4zavnri08fc" v2025.260
+set -e
+trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
+
+# Provides: #wrap_folded "icn1lm05mb97zkuaqxqd6neih" v2025.260
+wr() {
+	{
+		unterminated=false
+		while IFS= read -r line
+		do
+			if test "${line%" "}" != "$line"
+			then
+				echo TRAILING
+				false || exit
+			fi
+			test "${line#" "}" = "$line" && $unterminated && echo
+			printf '%s' "$line"
+			unterminated=true
+		done
+		$unterminated && echo
+	} | fold -sw $LINEWIDTH
+}
+LINEWIDTH=`tput cols || echo ${COLUMNS:-66}`
+
+# Provides: read_config "j5m0qhy6q7pz5cw356dv7adzs"
+cf=${XDG_CONFIG_HOME:="$HOME"/.config}/misc/`basename -- "$0"`_$APP_UUID.conf
+mkdir -p -- "`dirname -- "$cf"`" 2> /dev/null || :
+
+qs() {
+	printf "%s\n" "$1" | sed 's/'\''/'\''\\'\'''\''/g; s/.*/'\''&'\''/'
+}
+
+# Args: ${conffile_path}, ${shell_var_name}=${config_key}:=${default_val} ...
+# ${default_val} is optional and defaults to an empty string.
+# ${config_key} is optional and defaults to ${shell_var_name}.
+read_config() {
+	cf=$1; shift
+	test -f "$cf" || cf=/dev/null
+	n=$#
+	while test $n != 0
+	do
+		dfl=${1#*":="}
+		case $1 in
+			"$dfl") dfl= vn=$1;;
+			*) vn=${1%":=$dfl"}
+		esac
+		shift
+		key=${vn#*"="}
+		case $vn in
+			"$key") ;;
+			*) vn=${vn%"=$key"}
+		esac
+		set -- "$@" "$vn" "$key" "$dfl"
+		n=`expr $n - 1` || :
+	done
+	sed '
+		s/^[[:space:]]*//; /^#/d
+		s/^\([^=[:space:]]*\)[[:space:]]*=[[:space:]]*/\1 /
+		s/[[:space:]]*$//; /^$/d
+	' "$cf"	\
+	| {
+		while read key val
+		do
+			n=$#
+			while test $n != 0
+			do
+				case $key in
+					"$2") set -- "$@" "$1" "$2" "$val";;
+					*) set -- "$@" "$1" "$2" "$3"
+				esac
+				shift 3
+				n=`expr $n - 3` || :
+			done
+		done
+		n=$#
+		while test $n != 0
+		do
+			echo "$1=`qs "$3"`"
+			shift 3
+			n=`expr $n - 3` || :
+		done
+	}
+}
+# Provided: this + 1 line
+
+toplevel_uuid=0hy8h4tefdvp3ksyy8qev1x0p
+eval `read_config "$cf" toplevel_uuid:=$toplevel_uuid`
+save=false
+while getopts T:hV opt
+do
+	case $opt in
+		T) save=true; toplevel_uuid=$OPTARG;;
+		h) exit_help;;
+		V) exit_version;;
+		*) false || exit
+	esac
+done
+shift `expr $OPTIND - 1 || :`
+
+die() {
+	printf '%s\n\n%s\n' "$*" \
+		'Run again with option "-h" to display usage help.' \
+		> /dev/stderr
+	false || exit
+}
+
+expr x"$toplevel_uuid" : x'[0-9a-mp-z]\{25\}$' > /dev/null \
+	|| die "Invalid UUID format"
+
+if $save
+then
+	cat << ==== > "$cf"
+toplevel_uuid = $toplevel_uuid
+====
+fi
+
+test $# != 0 || die "Invalid command line parameters"
+
+# Be lazy. Let Perl do the hard work rather than trying to do it with standard
+# UNIX command line tools.
+
+exec perl -x -S -- "$0" "$@"
+#! perl
+#line 120
+
+use strict;
+use warnings qw(all);
+use autodie;
+use open ':locale';
+use File::Spec::Functions qw(
+   canonpath catdir catpath file_name_is_absolute rel2abs splitdir
+   splitpath
+);
+
+print "Hallo\n";

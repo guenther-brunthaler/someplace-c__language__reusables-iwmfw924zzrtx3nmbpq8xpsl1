@@ -27,6 +27,13 @@
  * This source file is free software.
 \* Distribution is permitted under the terms of the GPLv3. */
 
+/* Provides: ISO-C11 "9j40zlchsxzjziw2i346xqgxg"
+ * In-Group: #prolog "hysi8hasigcar300c22pwsd68"
+\* Before-Any: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+   #error "This source file requires a C11 compliant C compiler!"
+#endif
+
 /* Provides: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 /* In-Group: #prolog "hysi8hasigcar300c22pwsd68" */
 
@@ -79,17 +86,24 @@ struct resource_tag {
    );
 };
 
-/* Provides: get_rlist "4b4rf68q6t1xem3a0wkut1an8" v2025.251
+/* Provides: get_rlist=single-threaded "1mjvnebskjsmha8uct2vfne39" v2025.260
+ * Implements: get_rlist "4b4rf68q6t1xem3a0wkut1an8"
  * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
 \* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk" */
 extern resource **get_rlist(void) {
-   /* Change first "0" into "01" in order to enable multithreading support. */
-   #if 0 && defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-      _Thread_local /* Multi-threaded; requires C11 or newer. */
-   #else
-      static /* Single threaded. */
-   #endif
-   resource *rlist; /* Currently allocated resources. */
+   /* Single-threaded implementation. */
+   static resource *rlist; /* Currently allocated resources. */
+   return &rlist;
+}
+
+/* Provides: get_rlist=multithreaded "2cb927f4yskb6g56fczwzex3c" v2025.260
+ * Implements: get_rlist "4b4rf68q6t1xem3a0wkut1an8"
+ * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
+ * Requires: ISO-C11 "9j40zlchsxzjziw2i346xqgxg"
+\* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk" */
+extern resource **get_rlist(void) {
+   /* Multi-threaded implementation. */
+   _Thread_local resource *rlist; /* Currently allocated resources. */
    return &rlist;
 }
 
@@ -283,7 +297,7 @@ extern void fwrite_all(void const *src, size_t bytes, FILE *output) {
    return read_total;
 }
 
-/* Provides: main "0hy8h4tefdvp3ksyy8qev1x0p"
+/* Provided: above
 \* Requires: extern-as-static "ct8tlrqyg1kvazbtltc4q5yct" */
 int main(void) {
 }
