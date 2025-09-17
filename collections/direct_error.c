@@ -27,22 +27,34 @@
  * This source file is free software.
 \* Distribution is permitted under the terms of the GPLv3. */
 
-/* Provides: stdio.h "gqqiypaw4uwwi7bnygtx58n8k" v2025.251 */
+/* Provides: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
+/* In-Group: #prolog "hysi8hasigcar300c22pwsd68" */
+
+/* #includes */
+
+/* Provides: stdio.h "gqqiypaw4uwwi7bnygtx58n8k" v2025.251
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #include <stdio.h>
 
-/* Provides: stddef.h "cb3sxy4z9qsncgg47kyhtv9sk" v2025.251 */
+/* Provides: stddef.h "cb3sxy4z9qsncgg47kyhtv9sk" v2025.251
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #include <stddef.h>
 
-/* Provides: stdlib.h "h2cvvdvwkvp49is0n4xxr170u" v2025.251 */
+/* Provides: stdlib.h "h2cvvdvwkvp49is0n4xxr170u" v2025.251
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #include <stdlib.h>
 
-/* Provides: string.h "h96kmzbzu3yptkwweeccehwna" v2025.251 */
+/* Provides: string.h "h96kmzbzu3yptkwweeccehwna" v2025.251
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #include <string.h>
 
-/* Provides: assert.h "hfhk8vtj7vfu12tprs0i6ey0w" v2025.251 */
+/* Provides: assert.h "hfhk8vtj7vfu12tprs0i6ey0w" v2025.251
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #include <assert.h>
 
-/* Provides: extern-as-static "ct8tlrqyg1kvazbtltc4q5yct" v2025.251 */
+/* Provides: extern-as-static "ct8tlrqyg1kvazbtltc4q5yct" v2025.251
+ * In-Group: #prolog "hysi8hasigcar300c22pwsd68"
+\* Requires: #includes "ha7q5s6sl2lxpqlhcg9n2xg4c" */
 #if 01
    /* Make "extern" definitions actually "static".
     *
@@ -52,7 +64,11 @@
    #define extern static
 #endif
 
-/* Provides: resource "0j5v5lysz017ceu3p6hq2t8qk" v2025.251 */
+/* Provides: #r4g "60a5a2j8ufncvfv1em42yy4s7" v2025.260 */
+/* Resource control framework, 4th generation. */
+
+/* In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
+\* Provides: resource "0j5v5lysz017ceu3p6hq2t8qk" v2025.251 */
 typedef struct resource_tag resource;
 struct resource_tag {
    resource *link; /* Next older resource. */
@@ -64,6 +80,7 @@ struct resource_tag {
 };
 
 /* Provides: get_rlist "4b4rf68q6t1xem3a0wkut1an8" v2025.251
+ * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
 \* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk" */
 extern resource **get_rlist(void) {
    /* Change first "0" into "01" in order to enable multithreading support. */
@@ -77,6 +94,7 @@ extern resource **get_rlist(void) {
 }
 
 /* Provides: mark_tracked "nyaay1n43hkx9qe0ennprd9cg" v2025.251
+ * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
  * Requires: resource "0j5v5lysz017ceu3p6hq2t8qk"
  * Requires: get_rlist "4b4rf68q6t1xem3a0wkut1an8"
  *
@@ -87,6 +105,7 @@ extern resource *mark_tracked(void) {
 }
 
 /* Provides: release_tracked_until "q0mzr8clpu6xpi4tqanq8f534" v2025.251
+ * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
  * Requires: resource "0j5v5lysz017ceu3p6hq2t8qk"
  * Requires: get_rlist "4b4rf68q6t1xem3a0wkut1an8"
  *
@@ -97,6 +116,7 @@ extern void release_tracked_until(resource *stop) {
 }
 
 /* Provides: die "qm5t8wzj1sx7g08avdqdeqxnq" v2025.251
+ * In-Group: #r4g "60a5a2j8ufncvfv1em42yy4s7"
  * Requires: stdio.h "gqqiypaw4uwwi7bnygtx58n8k"
  * Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u"
 \* Requires: string.h "h96kmzbzu3yptkwweeccehwna" */
@@ -111,7 +131,11 @@ extern void die(char const *emsg) {
    exit(EXIT_FAILURE);
 }
 
+/* Provides: #dynmem "4pzzyces5ut2nu5echfgq8kay" v2025.260 */
+/* Dynamic memory allocation. */
+
 /* Provides: malloc_ck "rk2sy4idplk9s62lt1eixve7r" v2025.251
+ * In-Group: #dynmem "4pzzyces5ut2nu5echfgq8kay"
  * Requires: die "qm5t8wzj1sx7g08avdqdeqxnq"
 \* Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u" */
 extern void *malloc_ck(size_t bytes) {
@@ -121,6 +145,7 @@ extern void *malloc_ck(size_t bytes) {
 }
 
 /* Provides: realloc_ck "tj8442d0ztppda37jw9ydmqlh" v2025.251
+ * In-Group: #dynmem "4pzzyces5ut2nu5echfgq8kay"
  * Requires: die "qm5t8wzj1sx7g08avdqdeqxnq"
 \* Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u" */
 extern void *realloc_ck(void *p, size_t new_sz) {
@@ -130,9 +155,11 @@ extern void *realloc_ck(void *p, size_t new_sz) {
    return p;
 }
 
+/* Provides: #slices "dzi5i8tb8rsgfc4q3mpks9228" v2025.260
 /* Buffer managment. */
 
 /* Provides: slice "03lw9y1azsmah795p9ttny2yp" v2025.251
+ * In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
 \* Requires: stddef.h "cb3sxy4z9qsncgg47kyhtv9sk" */
 typedef struct {
    char *start;
@@ -140,7 +167,7 @@ typedef struct {
 } slice;
 
 /* Provides: new_tracked_slice "0l5yxz0bdi1vx9k2unjtp7igc" v2025.251
- *
+ * In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
  * Requires: slice "03lw9y1azsmah795p9ttny2yp"
 \* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk" */
 struct slice_rsrc {
@@ -148,7 +175,8 @@ struct slice_rsrc {
    resource tracker;
 };
 
-/* Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u"
+/* In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
+ * Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u"
 \* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk" */
 static void slice_dtor(resource **rlist) {
    struct slice_rsrc *sr;
@@ -156,7 +184,8 @@ static void slice_dtor(resource **rlist) {
    *rlist = sr->tracker.link; free(sr);
 }
 
-/* Requires: resource "0j5v5lysz017ceu3p6hq2t8qk"
+/* In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
+ * Requires: resource "0j5v5lysz017ceu3p6hq2t8qk"
  * Requires: slice "03lw9y1azsmah795p9ttny2yp"
  * Requires: get_rlist "4b4rf68q6t1xem3a0wkut1an8"
 \* Requires: malloc_ck "rk2sy4idplk9s62lt1eixve7r" */
@@ -169,6 +198,7 @@ extern slice *new_tracked_slice(void) {
 }
 
 /* Provides: slice_grow "10vripgxlib98zaq0b3cpae6t" v2025.251
+ * In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
  * Requires: slice "03lw9y1azsmah795p9ttny2yp"
  * Requires: realloc_ck "tj8442d0ztppda37jw9ydmqlh"
  * Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u"
@@ -181,6 +211,7 @@ extern void slice_grow(slice *sl, size_t larger) {
 }
 
 /* Provides: slice_fit "1a341l35tb9lf0jb4dg5endtf" v2025.251
+ * In-Group: #slices "dzi5i8tb8rsgfc4q3mpks9228"
  * Requires: slice "03lw9y1azsmah795p9ttny2yp"
  * Requires: realloc_ck "tj8442d0ztppda37jw9ydmqlh"
  * Requires: stdlib.h "h2cvvdvwkvp49is0n4xxr170u"
@@ -196,27 +227,32 @@ extern void slice_fit(slice *sl) {
    }
 }
 
+/* Provides: #io "155rvnbv60zs30hlqrfbdzj6w" v2025.260
+
 /* Input/Output.*/
 
 /* Provides: read_error "1kqs2xa1bx342pqvu6l2ijyt6" v2025.251
+ * In-Group: #io "155rvnbv60zs30hlqrfbdzj6w"
 \* Requires: die "qm5t8wzj1sx7g08avdqdeqxnq" */
 extern void read_error(void) {
    die("Read error");
 }
 
 /* Provides: write_error "1yarz7z0v2caciq9cjcjqam92" v2025.251
+ * In-Group: #io "155rvnbv60zs30hlqrfbdzj6w"
 \* Requires: die "qm5t8wzj1sx7g08avdqdeqxnq" */
 extern void write_error(void) {
    die("Write error");
 }
 
-/* Provides: try_fread_most "29mwf3s3amjhckcvq40sbmurb" v2025.251
+/* Provides: try_fread_most "29mwf3s3amjhckcvq40sbmurb" v2025.260
+ * In-Group: #io "155rvnbv60zs30hlqrfbdzj6w"
  * Requires: read_error "1kqs2xa1bx342pqvu6l2ijyt6"
  * Requires: stdio.h "gqqiypaw4uwwi7bnygtx58n8k"
  *
  * Repeat reading until <bytes_wanted> bytes have been read. Returns the
  * number of bytes actually read, which will only be less than <bytes_wanted>
-\* if EOF has been encountered. Ensure there are no read errors. */
+\* if EOF has been encountered. Ensure that there are no read errors. */
 extern size_t try_fread_most(void *dst, size_t bytes_wanted, FILE *input) {
    size_t read_total = 0;
    do {
@@ -227,4 +263,29 @@ extern size_t try_fread_most(void *dst, size_t bytes_wanted, FILE *input) {
       dst = (char *)dst + read;
    } while (!feof(input));
    return read_total;
+}
+
+/* Provides: fwrite_all "qtvdlfjil7ebpabriq8lp4723" v2025.260
+ * In-Group: #io "155rvnbv60zs30hlqrfbdzj6w"
+ * Requires: write_error "1yarz7z0v2caciq9cjcjqam92"
+ * Requires: stdio.h "gqqiypaw4uwwi7bnygtx58n8k"
+ *
+ * Repeat calling fwrite() until <bytes> bytes have been written. Ensure that
+\* there are no write errors. */
+extern void fwrite_all(void const *src, size_t bytes, FILE *output) {
+   for (;;) {
+      size_t written = fwrite(src, 1, bytes, output);
+      if (ferror(input)) write_error();
+      written_total += written;
+      if ((bytes -= written) == 0) break;
+      src = (char const*)src + written;
+   } while (!feof(output));
+   return read_total;
+}
+
+/* Provides: main "0hy8h4tefdvp3ksyy8qev1x0p"
+\* Requires: extern-as-static "ct8tlrqyg1kvazbtltc4q5yct" */
+int main(void) {
+}
+int main(int argc, char **argv) {
 }
