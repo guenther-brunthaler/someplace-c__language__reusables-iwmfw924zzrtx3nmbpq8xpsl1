@@ -343,10 +343,10 @@ Supported options:
  currently present in a source file. In order to get rid of unnecessary
  dependencies, run a "-d" operation first.
 
--o: Consider the remaining parameters of the command line to be pathnames of
- files and display the same absolute pathnames with "anonymized" directory
- prefix for them, as they would be stored in the "\$HASH-\$ALGO.origin" files
- in the library explained above.
+-O: (Upper case letter "Oh", not the digit zero.) Consider the remaining
+ parameters of the command line to be pathnames of files and display the same
+ absolute pathnames with "anonymized" directory prefix for them, as they would
+ be stored in the "\$HASH-\$ALGO.origin" files in the library explained above.
 
 -H: Consider the remaining parameters of the command line to be pathnames of
  files and display the hashes for all the files, using the same format as the
@@ -444,9 +444,17 @@ read_config() {
 toplevel_uuid=0hy8h4tefdvp3ksyy8qev1x0p
 eval `read_config "$cf" toplevel_uuid:=$toplevel_uuid`
 save=false
-while getopts T:hV opt
+cmd=
+while getopts auedrOHT:hV opt
 do
 	case $opt in
+		a) cmd=add;;
+		u) cmd=update;;
+		e) cmd=expand;;
+		d) cmd=delete;;
+		r) cmd=resolve;;
+		O) cmd=origin;;
+		H) cmd=hash;;
 		T) save=true; toplevel_uuid=$OPTARG;;
 		h) exit_help;;
 		V) exit_version;;
@@ -472,14 +480,15 @@ toplevel_uuid = $toplevel_uuid
 ====
 fi
 
+test "$cmd" || die "No command option has been specified!"
 test $# != 0 || die "Invalid command line parameters"
 
 # Be lazy. Let Perl do the hard work rather than trying to do it with standard
 # UNIX command line tools.
 
-exec perl -x -S -- "$0" "$@"
+exec perl -x -S -- "$0" "$toplevel_uuid" "$cmd" "$@"
 #! perl
-#line 120
+#line 491
 
 use strict;
 use warnings qw(all);
@@ -490,4 +499,13 @@ use File::Spec::Functions qw(
    splitpath
 );
 
-print "Hallo\n";
+our($toplevel_uuid, $cmd) = splice @ARGV, 0, 2;
+&{${
+      add => sub {}
+   ,  update => sub {}
+   ,  expand => sub {}
+   ,  delete => sub {}
+   ,  resolve => sub {}
+   ,  origin => sub {}
+   ,  hash => sub {}
+}}{$cmd};
