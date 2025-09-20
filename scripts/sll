@@ -486,7 +486,7 @@ test $# != 0 || die "Invalid command line parameters"
 # Be lazy. Let Perl do the hard work rather than trying to do it with standard
 # UNIX command line tools.
 
-exec perl -x -S -- "$0" "$toplevel_uuid" "$cmd" "$@"
+exec perl -x -S -- "$0" "$toplevel_uuid" "$cmd" "$@" || exit
 #! perl
 #line 491
 
@@ -498,14 +498,189 @@ use File::Spec::Functions qw(
    canonpath catdir catpath file_name_is_absolute rel2abs splitdir
    splitpath
 );
+use Carp;
+
+{
+   package OpenedFile;
+   
+   sub new {
+      my($me, %opt) = @_;
+      open my $fh, $opt{-mode}, $opt{-name} or croak $!;
+      $me = bless \$fh;
+      if ($opt{-binary}) {
+         binmode $fh or croak $!;
+      }
+      return $me;
+   }
+
+   sub handle {
+      my($me) = @_;
+      return $$me;
+   }
+   
+   DESTROY {
+      my($me) = @_;
+      close($$me) or croak $!;
+   }
+}
+
+{
+   package ArcFour;
+   
+   sub new {
+   	my $self = bless {s => []};
+   	$self->new_key;
+   	return $self;
+   }
+
+   # Start a new cycle of calling add() to set up a new key.
+   sub new_key($) {
+      my($me) = @_;
+      my $s = $me->{s};
+      for (my $i = 256; $i--; ) {${$s}[$i] = $i}
+   }
+   
+   # Add more key material. All calls together, at least 256 bytes must be
+   # added.
+   #
+   # Args: $string_ref [ $starting_offset [ $length ]]
+   sub add($$;$$) {
+      my($me, $bref, $start, $length) = @_;
+      $start = 0 unless defined $start;
+      $length = length($$bref) - $start unless defined $length;
+      my($s, $i, $j) = @$me{qw/s i j/};
+      my($t);
+      for (my $k = $start; $k <= $length; ++$k) {
+         $j = $j + $s->[$i] + ord(substr($$bref, $k, 1)) & 0xff;
+         $t = $s->[$i]; $s->[$i] = $s->[$j]; $s->[$j] = $t;
+         $i = $i + 1 & 0xff;
+      }      
+      @$me{qw/i j/} = ($i, $j);
+   }
+
+   # Switch from calling add() to calling generate() or skip().
+   sub key_complete($) {
+      my($me) = @_;
+      $me->{i} = $me->{j} = 0;
+   }
+
+   # Call this instead of new_key(), add() and key_complete() if the key might
+   # possibly be shorter than 256 bytes. After this call, generate() and
+   # skip() can be called. For keys up to 256 bytes, this will result in a
+   # legacy ARCFOUR key setup. For longer keys, it does the same as calling
+   # new_key(), add(key) and key_complete() in sequence.
+   #
+   # Args: $key_string
+   sub setkey($$) {
+      my($me, $key) = @_;
+      my $klen = length($key);
+      $me->new_key;
+      if ($klen >= 256) {
+        $me->add(\$key);
+      } else {
+         my $left;
+         for ($left = 256; $left >= $klen; $left -= $klen) {
+            $me->add(\$key);
+         }
+         $me->add(\$key, 0, $left);
+      }
+      $me->key_complete;
+   }
+
+   # Generate more pseudrandom material and write it into a string buffer.
+   #
+   # Args: $string_ref [ $starting_offset [ $length ]]
+   sub generate($$;$$) {
+      my($me, $bref, $start, $length) = @_;
+      $start = 0 unless defined $start;
+      $length = length($$bref) - $start unless defined $length;
+      my($s, $i, $j) = @$me{qw/s i j/};
+      my($v1, $v2);
+      for (my $k = $start; $k <= $length; ++$k) {
+         $i = $i + 1 & 0xff;
+         $j = $j + $s->[$i] & 0xff;
+         $v1 = $s->[$i]; $v2 = $s->[$i] = $s->[$j]; $s->[$j] = $v1;
+         substr($$bref, $k, 1) = $s->[$v1 + $v2 & 0xff];
+      }      
+      @$me{qw/i j/} = ($i, $j);
+   }
+
+   # Generate more pseudrandom material but throw it away. This allows one to
+   # skip parts of the generated pseudorandom sequence.
+   #
+   # Args: $string_ref $number_of_bytes_to_throw_away
+   sub skip($$$) {
+      my($me, $bref, $start, $length) = @_;
+      $start = 0 unless defined $start;
+      $length = length($$bref) - $start unless defined $length;
+      my($s, $i, $j) = @$me{qw/s i j/};
+      my($t);
+      while ($length--) {
+         $i = $i + 1 & 0xff;
+         $j = $j + $s->[$i] & 0xff;
+         $t = $s->[$i]; $s->[$i] = $s->[$j]; $s->[$j] = $t;
+      }      
+      @$me{qw/i j/} = ($i, $j);
+   }
+}
+
+sub hash($) {
+   my($fname) = @_;
+   my $file = new OpenedFile(-name => $fname, qw/-mode < -binary 1/);
+   my($fh) = $file->handle;
+   our($sandwich, @alphabet);
+   my $a = new ArcFour;
+   unless (defined $sandwich) {
+      $a->new_key; $a->key_complete; $a->skip(1 << 13);
+      $sandwich = ""; $a->generate(\$sandwich, 0, 256);
+      @alphabet = grep /[^01OI]/, ("A".."Z", "0".."9");
+   }
+   $a->new_key; $a->add(\$sandwich);
+   my($read, $buf);
+   for (;;) {
+      defined($read = read $fh, $buf, 1 << 20) or die $!;
+      last if $read == 0;
+      $a->add(\$buf);
+   }
+   $a->add(\$sandwich); $a->skip(3072);
+   $buf = ""; $a->generate(\$buf, 0, 32);
+   
+}
 
 our($toplevel_uuid, $cmd) = splice @ARGV, 0, 2;
-&{${
-      add => sub {}
+&{${{
+      add => sub {
+         binmode STDIN or die $!;
+         binmode STDOUT or die $!;
+         my($read, $buf, $rng, $i);
+         my $a = new ArcFour;
+         {
+            my $file = new OpenedFile(
+               -name => shift @ARGV, qw/-mode < -binary 1/
+            );
+            my($fh) = $file->handle;
+            defined($read = read $fh, $rng, 1 << 20) or die $!;
+         }
+         die if $read == 1 << 20;
+         $a->setkey($rng);
+         for (;;) {
+            defined($read = read STDIN, $buf, 1 << 20) or die $!;
+            last if $read == 0;
+            $a->generate(\$rng, 0, $read);
+            for ($i = $read; $i--; ) {
+               substr($buf, $i, 1) = chr(
+                  ord(substr($buf, $i, 1)) ^ ord(substr($rng, $i, 1))
+               )
+            }
+            print $buf or die $!;
+         }
+      }
    ,  update => sub {}
    ,  expand => sub {}
    ,  delete => sub {}
    ,  resolve => sub {}
    ,  origin => sub {}
-   ,  hash => sub {}
-}}{$cmd};
+   ,  hash => sub {
+      	print hash($_) . " $_\n" foreach @ARGV;
+      }
+}}{$cmd}};

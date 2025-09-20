@@ -1,7 +1,7 @@
 R4G Error Handling
 ==================
 Guenther Brunthaler
-v2025.220
+v2025.261
 
 R4G is the 'Resource Control Framework for C, 4th Generation'.
 
@@ -12,3 +12,100 @@ R4G does not display error messages by itself. It just composes and stores error
 More than one action callback can display the same error message. For instance, in addition to showing it to the user in some way, another callback might append the error message to some log file. A third callback might send it to the syslog.
 
 Or there is no callback at all for displaying the error message. Error messages are for humans. Sometimes when a helper program is supposed to be called by other programs only, error messages are unnecessary. In this case it might suffice if the program signals success or failure via its exit result code.
+
+
+Error-related per-thread global variables
+-----------------------------------------
+
+
+Every thread has its own resource context structure:
+
+-----
+typedef struct {
+   int errors;
+   int concat_error_messages_count;
+   slice *concat_error_messages;
+   char const *fallback_error_message;
+   resource *rlist;
+} rcontext;
+-----
+
+
+`rcontext.concat_error_messages`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is a pointer to a dynamically allocated buffer filled with a concatenation of error messages. The original error message comes first, followed by all follow-up error messages which might have occurred while trying to handle the original error.
+
+Every error message consist of one or more logical paragraphs. Every paragraph is a string of text separated from any adjacent paragraphs by at least one and at most two newline character.
+
+Normal flow-text paragraphs are separated by empty lines, which means two consecutive newline characters.
+
+However, sometimes just a "line break" is desired. For instance, a source code listing can be considered a single paragraph, its lines separated by single newline characters.
+
+The paragraph text itself should *not* be word-wrapped.
+
+The function which displays the error messages is supposed to do that instead.
+
+It is possible that no dynamically allocated error message has been set. In this case, the buffer contents have a size of zero.
+
+However, the pointer to the buffer descriptor can also be null. Then there are no dynamically allocated error message available at all right now.
+
+In this case, `rcontext.fallback_error_message` must be used for storing error messages (see below).
+
+In order to get a dynamically allocated error message, a resource must be added to the resource list which deallocates the dynamic error message and sets the `rcontext.error_message` pointer back to null. Then the `rcontext.concat_error_messages` pointer can be set to point to the buffer descriptor for the allocated error message.
+
+
+`rcontext.fallback_error_message`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is null or points to a single statically allocated read-only error message, usually a "C" string literal. This error message will only be used if the dynamically allocated error message is empty or does not exist (if it is null pointer).
+
+Only a single error message can be held in this variable. This is usually the original error message. Any follow-up error messages are ignored, but will be counted (see below).
+
+
+`rcontext.concat_error_messages_count`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This is the total number of individual error messages which have been concatenated as `rcontext.concat_error_messages` so far.
+
+An application must restrict the maximum number of error messages which are allowed to be concatenated. The hard upper limit is INT_MAX.
+
+If the application-defined limit of concatenated error messages is reached, no further error messages must be appended. Instead, the additional errors are just counted (see below).
+
+
+`rcontext.errors`
+~~~~~~~~~~~~~~~~~
+
+This is a saturatable count of the number of "active" errors which have occurred and have not yet been handled.
+
+This includes `rcontext.concat_error_messages_count` but might be an even higher value.
+
+The implementation must define some maximum value for this variable. Say, 20 or 50. But it can also be INT_MAX.
+
+If more errors occur than this maximum value, any further error messages will not be appended to the dynamic error message.
+
+Also, the number will be made negative in order to indicate that it is saturated and will never be incremented more.
+
+For example, let's say the saturation maximim is 20. Once the error count reaches 20 it is replaced by -20 and will not be incremented more.
+
+An error message reporter resource might display this as "20 or more errors occurred".
+
+`rcontext.errors` also indicates that an unhandled error exists.
+
+If there is no error active, `rcontext.errors` will always be zero.
+
+
+`rcontext.rlist`
+~~~~~~~~~~~~~~~~
+
+This represents the resource list and is explained link:rlist.html[here].
+
+
+Throwing an error
+-----------------
+
+A static fallback error message must be provided for every error, unless the error is anonymous and passes NULL as the fallback error message.
+
+The first thing to do when creating an error is a saturated increment of `rcontext.errors`.
+
+Then it will be checked whether a dynamically allocated error message buffer exists.
